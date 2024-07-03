@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <title>Profile</title>
+</head>
+<style>
+.tag-label {
+	display: inline-block;
+	background-color: #808080;
+	border-radius: 3px;
+	padding: 5px 10px;
+	margin: 2px;
+	position: relative;
+}
+</style>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <h2 class="my-4 text-center">{{ user.username }}</h2>
+				{% if user.birthdate %}
+				<h5 class="my-4 text-center" id="userAge">{{ user.birthdate }}</h5>
+				{% endif %}
+				{% if user.city and user.country %}
+				<h5 class="my-4 text-center">{{ user.city }}, {{ user.country }}</h1>
+				{% endif %}
+                <div class="card">
+                    <div class="card-body">
+						{% if user.description %}
+                        <h5 class="card-title">Description</h5>
+                        <p class="card-text">{{ user.description }}</p>
+						{% endif %}
+						{% if user.tags %}
+						<h5 class="card-title">Tags</h5>
+						<div id="tags-container">
+							{% for tag in tags %}
+								<span class="tag-label" >{{ tag }}</span>
+							{% endfor %}
+						</div>
+						{% endif %}
+						<br>
+						<h5 class="card-title">My Trips:</h5>
+						{% if user.trips %}
+						<ul>
+							{% for trip in user.trips %}
+							<li>
+							<span class="tag-label" >{{ trip.city }}, {{ trip.country }}</span>
+							{{ trip.start_date }} - {{ trip.end_date }}
+							</li>
+							
+							{% endfor %}
+						</ul>
+						{% else %}
+						<p class="card-text">No trips ahead :( </p>
+						{% endif %}
+						<br>
+						{% if user == current_user %}
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Edit Profile</a>
+						{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	
+	<script>
+	const userAge = document.getElementById('userAge')
+	if (userAge.textContent) {
+		const now = new Date();
+		var birthdate = new Date(userAge.textContent);
+		const diff = Math.abs(now - birthdate);
+		const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
+		userAge.textContent = "Age: " + age;
+	}
+	</script>
+	
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
+{% endblock %}

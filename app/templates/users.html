@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Active Users{% endblock %}
+{% block content %}
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .user-list {
+        list-style: none;
+        padding: 0;
+    }
+    .user-list li {
+        margin: 10px 0;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    .user-list .username {
+        font-weight: bold;
+    }
+    .user-list .email {
+        color: #888;
+    }
+</style>
+
+<div class="container">
+    <h2>Active Users</h2>
+    {% if users %}
+        <ul class="user-list">
+            {% for user in users %}
+                <li>
+                    <a href="{{ url_for('profileid', user_id=user.id) }}" class="username">{{ user.username }}</a>
+                    <div class="email">{{ user.email }}</div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No active users found.</p>
+    {% endif %}
+</div>
+{% endblock %}

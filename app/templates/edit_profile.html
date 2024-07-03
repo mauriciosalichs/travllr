@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<head>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #343a40;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+    }
+    .navbar {
+        width: 100%;
+        padding: 10px;
+        background-color: #343a40;
+        display: flex;
+        justify-content: flex-start;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+    .navbar a {
+        color: #f8f9fa;
+        padding: 14px 20px;
+        text-decoration: none;
+        text-align: center;
+    }
+	.container {
+		background-color: #E3C4BD;
+		width: 100%;
+		margin-top: 80px; /* Adjusted for fixed navbar */
+	}
+	.btn-red {
+	  background-color: red;
+	  border-color: red;
+	  color: white; /* Optional, if you want to change the text color */
+	}
+</style>
+
+<div class="container">
+	<ul id="newTags">
+    </ul>
+    <form method="POST" action="{{ url_for('edit_profile') }}">
+        {{ form.hidden_tag() }}
+		<div class="form-group">
+            {{ form.username.label }}
+            {{ form.username(size=32, class_="form-control", id="nameInput") }}
+        </div>
+		<div class="form-group">
+            {{ form.country.label }}
+            {{ form.country(size=32, class_="form-control", list="countryList", id="countryInput") }}
+			<datalist id="countryList"></datalist>
+        </div>
+        <div class="form-group">
+            {{ form.city.label }}
+            {{ form.city(size=32, class_="form-control", list="cityList", id="cityInput") }}
+			<datalist id="cityList">
+			</datalist>
+        </div>
+        <div class="form-group">
+			{{ form.birthdate.label }}
+			{{ form.birthdate(size=32, class_="form-control", id="birthInput") }}
+		</div><div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(rows=10, cols=40, class_="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="tags">Tags:</label>
+            <ul id="tagList">
+			</ul>
+			<br>
+            <div class="input-group">
+                {{ form.tag(class_="form-control", placeholder="Add a tag", autocapitalize="none", id="tagInput") }}
+            </div>
+			<div class="form-group">
+				<button type="button" onclick="addTag()">Add Tag</button>
+			</div>
+        </div>
+		<div class="d-flex justify-content-center">
+			{{ form.submit(class_="btn btn-lg btn-primary btn-block", onclick="submitInfo()", style="background-color: blue; width: 50%;") }}
+			<br>
+			{{ form.delete_account }}
+		</div>
+		<br>
+    </form>
+</div>
+
+<script>
+	const countryList = document.getElementById('countryList');
+	fetch('/static/json/countries.json')
+		.then(response => response.json())
+		.then(data => {
+	// Split the string into an array of countries
+		data.forEach(country => {
+			const listItem = document.createElement('option');
+			listItem.value = country;
+			countryList.appendChild(listItem);
+		})});
+		
+	const countryInput = document.getElementById('countryInput');
+	const cityInput = document.getElementById('cityInput');
+	
+	countryInput.addEventListener('blur', function(event) {
+		const selectedCountry = event.target.value;
+		const countryListItem = Array.from(countryList.getElementsByTagName('option')).find(opt => opt.value === selectedCountry.trim());
+		if (!countryListItem) {
+			alert("'" + selectedCountry + "' is not a valid country!");
+			countryInput.value = '';
+		} else {
+			cityInput.value = "";
+		}
+	});
+	cityInput.addEventListener('focus', function(event) {
+		if (countryInput.value === '') {
+			alert("Select a valid country first!");
+			countryInput.focus();
+		} else {
+			const cityList = document.getElementById('cityList');
+			fetch('/static/json/cities.json')
+				.then(response => response.json())
+				.then(data => {
+				cityList.innerHTML = "";
+				data[countryInput.value].forEach(country => {
+					const listItem = document.createElement('option');
+					listItem.value = country;
+					cityList.appendChild(listItem);
+			})});
+		}
+	});
+	cityInput.addEventListener('blur', function(event) {
+		const selectedCity = event.target.value;
+		if (selectedCity === "") return;
+		const cityListItem = Array.from(cityList.getElementsByTagName('option')).find(opt => opt.value === selectedCity.trim());
+		if (!cityListItem) {
+			alert("'" + selectedCity + "' is not a valid city!");
+			cityInput.value = '';
+		}
+	});
+</script>
+
+<script>
+const birthInput = document.getElementById('birthInput');
+birthInput.addEventListener('blur', function(event) {
+	const birthDate = event.target.value;
+	if (birthDate === "") return;
+	const now = new Date();
+	var birthdate = new Date(birthDate);
+	const diff = now - birthdate;
+	if (diff < 0) {
+		alert("'" + birthDate + "' is not a valid birth date!");
+		birthInput.value = "";
+	} else {
+		const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
+		if (age < 18) {
+			alert("The user must be older than 18!");
+			birthInput.value = "";
+		}
+	}
+});
+</script>
+
+<script>
+	document.addEventListener("DOMContentLoaded", function() {
+		var form = document.querySelector("form");
+		form.addEventListener("submit", function(event) {
+			if (document.getElementById("nameInput").value === "") {
+				alert("Please enter a name.");
+				event.preventDefault(); // Prevent form submission
+			}
+			else if (document.getElementById("countryInput").value === "") {
+				alert("Please enter a country.");
+				event.preventDefault(); // Prevent form submission
+			}
+			else if (document.getElementById("cityInput").value === "") {
+				alert("Please enter a city.");
+				event.preventDefault(); // Prevent form submission
+			}
+			else if (document.getElementById("birthInput").value === "") {
+				alert("Please enter a birthdate.");
+				event.preventDefault(); // Prevent form submission
+			}
+			document.getElementById('tagInput').value = ''
+			var listContainer = document.getElementById('tagList');
+			var items = listContainer.getElementsByTagName('button');
+			for (var i = 0; i < items.length; i++) {
+				document.getElementById('tagInput').value += items[i].textContent + ';'
+			}
+		});
+	});
+</script>
+
+<script>
+	function deleteTag(tagLabel) {
+		var listContainer = document.getElementById('tagList');
+		var items = listContainer.getElementsByTagName('button');
+		for (var i = 0; i < items.length; i++) {
+			if (items[i].textContent === tagLabel) {
+				listContainer.removeChild(items[i]);
+				break;
+			}
+		}
+	}
+	function addTag() {
+		const tagText = document.getElementById('tagInput').value;
+		createTag(tagText);
+	}
+	
+	function createTag(tagText) {
+		var listContainer = document.getElementById('tagList');
+		var listItems = Array.from(listContainer.querySelectorAll('*'));
+		if (listItems.some(button => button.textContent === tagText)) {
+                alert("'" + tagText + "' is already a tag!");
+            } else {
+                var newItemElement = document.createElement('button');
+				newItemElement.onclick = function() { deleteTag(tagText); };
+				newItemElement.textContent = tagText;
+				newItemElement.style.marginLeft = '10px';  // Ajusta este valor según sea necesario
+				newItemElement.style.backgroundColor = 'red'; 
+				listContainer.appendChild(newItemElement);
+				document.getElementById('tagInput').value = ""
+            }
+	}
+	
+	function loadInitialTags() {
+		var tags = {{ form.tags | tojson }};
+		tags.forEach(tag => {
+			createTag(tag);
+		});
+	}
+	window.onload = loadInitialTags;
+</script>
+
+{% endblock %}

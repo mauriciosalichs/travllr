@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<h1>Messages</h1>
+
+<h2>Sent Messages</h2>
+<ul>
+    {% for message in sent_messages %}
+        <li>
+            To: {{ message.recipient.username }} - {{ message.body }} - {{ message.timestamp }}
+        </li>
+    {% endfor %}
+</ul>
+
+<h2>Received Messages</h2>
+<ul>
+    {% for message in received_messages %}
+        <li>
+            From: {{ message.author.username }} - {{ message.body }} - {{ message.timestamp }}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
