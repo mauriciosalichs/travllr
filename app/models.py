@@ -8,12 +8,14 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(30), unique=True, nullable=False)
     email = db.Column(db.String(30), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    image_file = db.Column(db.String(20), nullable=False, default='images/default.jpg')
+    gender = db.Column(db.String(10), nullable=True)
+    image_file = db.Column(db.Text, nullable=True)
     description = db.Column(db.Text, nullable=True)
     country = db.Column(db.String(30), nullable=True)
     city = db.Column(db.String(30), nullable=True)
     tags = db.Column(db.String(500), nullable=True)
     birthdate = db.Column(db.Date)
+    last_login = db.Column(db.DateTime)
     friends = db.relationship('Friend', backref='user', lazy=True)
     trips = db.relationship('Trip', backref='traveler', lazy=True)
     
@@ -34,10 +36,11 @@ class Friend(db.Model):
 
 class Trip(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    country = db.Column(db.String(100))
+    country = db.Column(db.String(100), nullable=False)
     city = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
+    comments = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 @login.user_loader

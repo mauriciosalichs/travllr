@@ -7,11 +7,17 @@
 	<div>
         {{ form.country.label }}
         {{ form.country(size=32, list="countryList", id="countryInput") }}
+		{% for error in form.country.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
 		<datalist id="countryList"></datalist>
     </div>
     <div>
         {{ form.city.label }}
-        {{ form.city(size=32, list="cityList", id="cityInput") }}
+        {{ form.city(size=32, list="cityList", id="cityInput", disabled='disabled') }}
+		{% for error in form.city.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
 		<datalist id="cityList"></datalist>
     </div>
     <div>
@@ -28,12 +34,39 @@
             <span style="color: red;">{{ error }}</span>
         {% endfor %}
     </div>
+	<div>
+        {{ form.comments.label }}
+        {{ form.comments(rows=10, cols=40, class_="form-control") }}
+	</div>
     <div>
         {{ form.submit() }}
     </div>
 </form>
 
 <script>
+	function checkCityAvailability() {
+		const countryValue = document.getElementById('countryInput').value;
+		const cityInput = document.getElementById('cityInput');
+		if (countryValue !== '') {
+			cityInput.disabled = false;
+			cityInput.value = '';
+			cityInput.classList.remove('disabled');
+			const cityList = document.getElementById('cityList');
+			fetch('/static/json/cities.json')
+				.then(response => response.json())
+				.then(data => {
+				data[countryInput.value].forEach(country => {
+					const listItem = document.createElement('option');
+					listItem.value = country;
+					cityList.appendChild(listItem);
+			})});
+		} else {
+			cityList.innerHTML = "";
+			cityInput.disabled = true;
+			cityInput.classList.add('disabled');
+		}
+	}
+	
 	const countryList = document.getElementById('countryList');
 	fetch('/static/json/countries.json')
 		.then(response => response.json())
@@ -48,42 +81,11 @@
 	const countryInput = document.getElementById('countryInput');
 	const cityInput = document.getElementById('cityInput');
 	
-	countryInput.addEventListener('blur', function(event) {
-		const selectedCountry = event.target.value;
-		const countryListItem = Array.from(countryList.getElementsByTagName('option')).find(opt => opt.value === selectedCountry.trim());
-		if (!countryListItem) {
-			alert("'" + selectedCountry + "' is not a valid country!");
-			countryInput.value = '';
-		} else {
-			cityInput.value = "";
-		}
+	document.getElementById('countryInput').addEventListener('input', function() {
+		checkCityAvailability();
 	});
-	cityInput.addEventListener('focus', function(event) {
-		if (countryInput.value === '') {
-			alert("Select a valid country first!");
-			countryInput.focus();
-		} else {
-			const cityList = document.getElementById('cityList');
-			fetch('/static/json/cities.json')
-				.then(response => response.json())
-				.then(data => {
-				cityList.innerHTML = "";
-				data[countryInput.value].forEach(country => {
-					const listItem = document.createElement('option');
-					listItem.value = country;
-					cityList.appendChild(listItem);
-			})});
-		}
-	});
-	cityInput.addEventListener('blur', function(event) {
-		const selectedCity = event.target.value;
-		if (selectedCity === "") return;
-		const cityListItem = Array.from(cityList.getElementsByTagName('option')).find(opt => opt.value === selectedCity.trim());
-		if (!cityListItem) {
-			alert("'" + selectedCity + "' is not a valid city!");
-			cityInput.value = '';
-		}
-	});
+	
+	window.onload = checkCityAvailability();
 </script>
 
 {% endblock %}

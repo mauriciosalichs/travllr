@@ -10,75 +10,107 @@
 </head>
 <style>
 .tag-label {
-	display: inline-block;
-	background-color: #808080;
-	border-radius: 3px;
-	padding: 5px 10px;
-	margin: 2px;
-	position: relative;
+    display: inline-block;
+    background-color: #808080;
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin: 2px;
+    position: relative;
+}
+.profile-info {
+    display: flex;
+    align-items: center;
+}
+.profile-info img {
+    border-radius: 50%;
+    margin-right: 15px;
 }
 </style>
 <body>
     <div class="container">
         <div class="row">
             <div class="col-md-8 offset-md-2">
-                <h2 class="my-4 text-center">{{ user.username }}</h2>
-				{% if user.birthdate %}
-				<h5 class="my-4 text-center" id="userAge">{{ user.birthdate }}</h5>
-				{% endif %}
-				{% if user.city and user.country %}
-				<h5 class="my-4 text-center">{{ user.city }}, {{ user.country }}</h1>
-				{% endif %}
                 <div class="card">
                     <div class="card-body">
-						{% if user.description %}
+                        <div class="profile-info">
+							{% if user.image_file %}
+                            <img src="data:image/jpeg;base64,{{ user.image_file }}" alt="Profile Image" width="100" height="100" id="profileImage">
+							{% else %}
+							<img src="{{ url_for('static', filename='img/default.jpg') }}" alt="Profile Image" width="100" height="100" id="profileImage">
+							{% endif %}
+                            <div>
+								<h2>{{ user.username }}</h2>
+								{% if user.gender %}
+								{{user.gender[-1]}}
+								{% endif %}
+                                {% if user.birthdate %}
+                                <span id="userAge">{{ user.birthdate }}</span>
+                                {% endif %}
+                                {% if user.city and user.country %}
+                                <span>{{ user.city }}, {{ user.country }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        {% if user.description %}
                         <h5 class="card-title">Description</h5>
                         <p class="card-text">{{ user.description }}</p>
-						{% endif %}
-						{% if user.tags %}
-						<h5 class="card-title">Tags</h5>
-						<div id="tags-container">
-							{% for tag in tags %}
-								<span class="tag-label" >{{ tag }}</span>
-							{% endfor %}
-						</div>
-						{% endif %}
-						<br>
-						<h5 class="card-title">My Trips:</h5>
-						{% if user.trips %}
-						<ul>
-							{% for trip in user.trips %}
-							<li>
-							<span class="tag-label" >{{ trip.city }}, {{ trip.country }}</span>
-							{{ trip.start_date }} - {{ trip.end_date }}
-							</li>
-							
-							{% endfor %}
-						</ul>
-						{% else %}
-						<p class="card-text">No trips ahead :( </p>
-						{% endif %}
-						<br>
-						{% if user == current_user %}
+                        {% endif %}
+                        {% if user.tags %}
+                        <h5 class="card-title">Tags</h5>
+                        <div id="tags-container">
+                            {% for tag in tags %}
+                                <span class="tag-label">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <br>
+                        <h5 class="card-title">My Trips:</h5>
+                        {% if user.trips %}
+                        <ul>
+                            {% for trip in user.trips %}
+                            <li>
+                            <span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
+                            {{ trip.start_date }} - {{ trip.end_date }}
+							<a href="{{ url_for('edit_trip', trip_id=trip.id) }}" class="trip">EDIT</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="card-text">No trips ahead :(</p>
+                        {% endif %}
+                        <br>
+                        {% if user == current_user %}
                         <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Edit Profile</a>
-						{% endif %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script>
+    const userAge = document.getElementById('userAge');
+    if (userAge.textContent) {
+        const now = new Date();
+        var birthdate = new Date(userAge.textContent);
+        const diff = Math.abs(now - birthdate);
+        const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
+        userAge.textContent = age;
+    }
 	
-	<script>
-	const userAge = document.getElementById('userAge')
-	if (userAge.textContent) {
-		const now = new Date();
-		var birthdate = new Date(userAge.textContent);
-		const diff = Math.abs(now - birthdate);
-		const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
-		userAge.textContent = "Age: " + age;
-	}
-	</script>
-	
+	function changeProfileImage(event) {
+        const input = event.target;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profileImage').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    </script>
+    
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>

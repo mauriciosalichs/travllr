@@ -51,12 +51,20 @@
 <div class="container">
 	<ul id="newTags">
     </ul>
-    <form method="POST" action="{{ url_for('edit_profile') }}">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_profile') }}">
         {{ form.hidden_tag() }}
 		<div class="form-group">
             {{ form.username.label }}
             {{ form.username(size=32, class_="form-control", id="nameInput") }}
         </div>
+		<div class="form-group">
+			{{ form.gender.label }}
+			{{ form.gender(class_='custom-select') }}
+		</div>
+		<div class="form-group">
+			{{ form.file.label }}
+			{{ form.file(size=32, class_="form-control-file", id="imageInput") }}
+		</div>
 		<div class="form-group">
             {{ form.country.label }}
             {{ form.country(size=32, class_="form-control", list="countryList", id="countryInput") }}
@@ -71,7 +79,8 @@
         <div class="form-group">
 			{{ form.birthdate.label }}
 			{{ form.birthdate(size=32, class_="form-control", id="birthInput") }}
-		</div><div class="form-group">
+		</div>
+		<div class="form-group">
             {{ form.description.label }}
             {{ form.description(rows=10, cols=40, class_="form-control") }}
         </div>
@@ -88,9 +97,8 @@
 			</div>
         </div>
 		<div class="d-flex justify-content-center">
-			{{ form.submit(class_="btn btn-lg btn-primary btn-block", onclick="submitInfo()", style="background-color: blue; width: 50%;") }}
+			{{ form.submit(class_="btn btn-lg btn-primary btn-block", style="background-color: blue; width: 50%;") }}
 			<br>
-			{{ form.delete_account }}
 		</div>
 		<br>
     </form>
@@ -171,25 +179,13 @@ birthInput.addEventListener('blur', function(event) {
 </script>
 
 <script>
+	var tags = {{ form.tags | tojson }};
+	tags.forEach(tag => {
+		createTag(tag);
+	});
 	document.addEventListener("DOMContentLoaded", function() {
 		var form = document.querySelector("form");
 		form.addEventListener("submit", function(event) {
-			if (document.getElementById("nameInput").value === "") {
-				alert("Please enter a name.");
-				event.preventDefault(); // Prevent form submission
-			}
-			else if (document.getElementById("countryInput").value === "") {
-				alert("Please enter a country.");
-				event.preventDefault(); // Prevent form submission
-			}
-			else if (document.getElementById("cityInput").value === "") {
-				alert("Please enter a city.");
-				event.preventDefault(); // Prevent form submission
-			}
-			else if (document.getElementById("birthInput").value === "") {
-				alert("Please enter a birthdate.");
-				event.preventDefault(); // Prevent form submission
-			}
 			document.getElementById('tagInput').value = ''
 			var listContainer = document.getElementById('tagList');
 			var items = listContainer.getElementsByTagName('button');
@@ -198,9 +194,6 @@ birthInput.addEventListener('blur', function(event) {
 			}
 		});
 	});
-</script>
-
-<script>
 	function deleteTag(tagLabel) {
 		var listContainer = document.getElementById('tagList');
 		var items = listContainer.getElementsByTagName('button');
@@ -215,7 +208,6 @@ birthInput.addEventListener('blur', function(event) {
 		const tagText = document.getElementById('tagInput').value;
 		createTag(tagText);
 	}
-	
 	function createTag(tagText) {
 		var listContainer = document.getElementById('tagList');
 		var listItems = Array.from(listContainer.querySelectorAll('*'));
@@ -231,14 +223,6 @@ birthInput.addEventListener('blur', function(event) {
 				document.getElementById('tagInput').value = ""
             }
 	}
-	
-	function loadInitialTags() {
-		var tags = {{ form.tags | tojson }};
-		tags.forEach(tag => {
-			createTag(tag);
-		});
-	}
-	window.onload = loadInitialTags;
 </script>
 
 {% endblock %}
