@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Edit the Trip{% endblock %}
 {% block content %}
+
 <h1>Edit the Trip</h1>
+
 <form method="POST" action="{{ url_for('edit_trip', trip_id=trip.id) }}">
     {{ form.hidden_tag() }}
 	<div>
@@ -31,7 +33,7 @@
         {{ form.comments(rows=10, cols=40, class_="form-control") }}
 	</div>
     <div>
-        {{ form.edit() }}
+        {{ form.edit(class_="btn btn-lg btn-primary btn-block") }}
     </div>
 </form>
 

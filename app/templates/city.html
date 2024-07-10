@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}City{% endblock %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <title>City</title>
+</head>
+<style>
+	.profile-image {
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		margin-right: 15px;
+	}
+	
+</style>
+
+<h1>{{location.city}}, {{location.country}}</h1>
+<br>
+<div>
+	{% if travllrs %}
+	<h4>Travllrs living in {{location.city}}, {{location.country}}</h4>
+	{% for user in travllrs %}
+		<li>
+			{% if user.image_file %}
+			<img src="data:image/jpeg;base64,{{ user.image_file }}" class="profile-image">
+			{% else %}
+			<img src="{{ url_for('static', filename='img/default.jpg') }}" class="profile-image">
+			{% endif %}
+			<a href="{{ url_for('profile', user_id=user.id) }}" class="username">{{ user.username }}</a>
+		</li>
+	{% endfor %}
+	{% else %}
+	No trvllrs living here :(
+	{% endif %}
+</div>
+
+{% endblock %}

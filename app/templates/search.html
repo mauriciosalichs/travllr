@@ -1,21 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Active Users{% endblock %}
+{% block title %}User Search{% endblock %}
 {% block content %}
-<style>
-    .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #ffffff;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-		overflow: hidden;
-    }
-</style>
 
+<h1>User Search</h1>
+	
 <form method="POST" action="{{ url_for('search') }}">
 	{{ form.hidden_tag() }}
-    <h1>User Search</h1>
-	<div class="form-group">
+    <div class="form-group">
 		{{ form.keyword.label }}
 		{{ form.keyword(size=32, class_="form-control") }}
 	</div>

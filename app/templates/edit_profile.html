@@ -219,7 +219,15 @@ birthInput.addEventListener('blur', function(event) {
 				newItemElement.textContent = tagText;
 				newItemElement.style.marginLeft = '10px';  // Ajusta este valor según sea necesario
 				newItemElement.style.backgroundColor = 'red'; 
-				listContainer.appendChild(newItemElement);
+				var existingItems = Array.from(listContainer.children);
+				var insertIndex = existingItems.findIndex(function(item) {
+					return newItemElement.textContent.toLowerCase() < item.textContent.toLowerCase();
+				});
+				if (insertIndex === -1) {
+					listContainer.appendChild(newItemElement);
+				} else {
+					listContainer.insertBefore(newItemElement, existingItems[insertIndex]);
+				}
 				document.getElementById('tagInput').value = ""
             }
 	}

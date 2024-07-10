@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Message{% endblock %}
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Conversation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chat-container { width: 90%; margin: 0 auto; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .message.sent { background-color: #d1e7dd; text-align: right; }
+		.message.received { background-color: #f8d7da; text-align: left; }
+        .form-container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h5>Conversation with <a href="{{ url_for('profile', user_id=other.id) }}" class="username">{{ other.username }}</a></h5>
+        
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                    {{ message.content }}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-container">
+            <form method="POST">
+                <input type="hidden" name="receiver_id" value="{{ other.id }}">
+                <textarea name="message" rows="3" style="width: 100%;" placeholder="Type your message here..."></textarea><br>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+</body>
+{% endblock %}

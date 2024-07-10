@@ -6,21 +6,57 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
     <title>Travllr</title>
 </head>
+<style>
+	.nav-item {
+		position: relative;
+        display: inline-block;
+	}
+	.nav-link {
+		margin-left: 10px;
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+	.nav-link:hover {
+		text-decoration: none;
+		color: inherit;
+	}
+	.notification-badge {
+		position: absolute;
+		bottom: -3px;
+		right: 0px;
+		width: 20px;
+		height: 20px;
+		background-color: red;
+		color: white;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 14px;
+		font-weight: bold;
+	}
+</style>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="{{ url_for('home') }}">Travllr</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" >
             <span class="navbar-toggler-icon"></span>
         </button>
+		{% if current_user.is_authenticated %}
+		<a class="nav-link" href="{{ url_for('profile', user_id=current_user.id) }}">Logged as {{current_user.username}}</a>
+		{% endif %}
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile', user_id=current_user.id) }}">Profile</a></li>
 					<li class="nav-item"><a class="nav-link" href="{{ url_for('search') }}">Search</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('create_trip') }}">Create Trip</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('notifications') }}">Notifications</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('messages') }}">Messages</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('messages') }}">Messages</a>
+					{% if unread_messages %}
+					<div class="notification-badge">{{unread_messages}}</div>
+					{% endif %}
+					</li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>

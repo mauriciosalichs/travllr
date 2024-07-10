@@ -17,13 +17,39 @@
     margin: 2px;
     position: relative;
 }
+.tag-label-info {
+    display: inline-block;
+    background-color: #404040;
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin: 2px;
+    position: relative;
+    color: white;
+}
 .profile-info {
     display: flex;
+    align-items: center;
+}
+.trip-info {
+    color: green;
     align-items: center;
 }
 .profile-info img {
     border-radius: 50%;
     margin-right: 15px;
+}
+.link {
+	text-decoration: none;
+	color: inherit;
+}
+.linklarge {
+	text-decoration: none;
+	color: inherit;
+	font-size: 30px;
+}
+.link:hover {
+	text-decoration: none;
+	color: inherit;
 }
 </style>
 <body>
@@ -41,39 +67,67 @@
                             <div>
 								<h2>{{ user.username }}</h2>
 								{% if user.gender %}
-								{{user.gender[-1]}}
+								<span class="tag-label-info">{{user.gender[-1]}}</span>
 								{% endif %}
                                 {% if user.birthdate %}
-                                <span id="userAge">{{ user.birthdate }}</span>
+                                <span class="tag-label-info" id="userAge">{{ user.birthdate }}</span>
                                 {% endif %}
                                 {% if user.city and user.country %}
-                                <span>{{ user.city }}, {{ user.country }}</span>
+                                <span class="tag-label-info">🚩 {{ user.city }}, {{ user.country }}</span>
                                 {% endif %}
+								{% if user != current_user %}
+								<a href="{{ url_for('message', user_id=user.id) }}" class="linklarge">✉</a>
+								{% endif %}
+								{% if current_trip %}
+								<div class="trip-info"><a href="{{ url_for('edit_trip', trip_id=current_trip.id) }}" class="link">Currently in {{ current_trip.city }}, {{ current_trip.country }} until {{ current_trip.end_date }}</a></div>
+								{% endif %}
                             </div>
                         </div>
                         <hr>
                         {% if user.description %}
-                        <h5 class="card-title">Description</h5>
+                        <h5 class="card-title">DESCRIPTION</h5>
                         <p class="card-text">{{ user.description }}</p>
                         {% endif %}
+						{% if current_trip %}
+						<p class="trip-info">{{ current_trip.comments }}</p>
+						{% endif %}
                         {% if user.tags %}
-                        <h5 class="card-title">Tags</h5>
+                        <h5 class="card-title">TAGS</h5>
                         <div id="tags-container">
                             {% for tag in tags %}
                                 <span class="tag-label">{{ tag }}</span>
                             {% endfor %}
                         </div>
                         {% endif %}
-                        <br>
-                        <h5 class="card-title">My Trips:</h5>
-                        {% if user.trips %}
-                        <ul>
-                            {% for trip in user.trips %}
+						<br>
+						{% if past_trips %}
+						<h5 class="card-title">TRIPS HISTORY</h5>
+						<ul>
+						{% for trip in past_trips %}
                             <li>
                             <span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
-                            {{ trip.start_date }} - {{ trip.end_date }}
-							<a href="{{ url_for('edit_trip', trip_id=trip.id) }}" class="trip">EDIT</a>
+                            <p>{{ trip.start_date }} - {{ trip.end_date }}</p>
                             </li>
+						{% endfor %}
+						</ul>
+						{% endif %}
+                        <br>
+                        <h5 class="card-title">UPCOMING TRIPS</h5>
+                        {% if future_trips %}
+                        <ul>
+                            {% for trip in future_trips %}
+                            <li>
+                            <span class="tag-label"><a href="{{ url_for('city', city=trip.city, country=trip.country) }}" class="link">{{ trip.city }}, {{ trip.country }}</a></span>
+                            <p>{{ trip.start_date }} - {{ trip.end_date }}
+							{% if user == current_user %}
+							<a href="{{ url_for('edit_trip', trip_id=trip.id) }}" class="link">✎</a>
+							<a href="{{ url_for('delete_trip', trip_id=trip.id) }}" class="link">❌</a>
+							{% endif %}
+							</p>
+                            </li>
+							{% if trip.comments %}
+							<p>{{ trip.comments }}</p>
+							{% endif %}
                             {% endfor %}
                         </ul>
                         {% else %}

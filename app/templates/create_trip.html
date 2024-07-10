@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Create Trip{% endblock %}
 {% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
 <h1>Create a New Trip</h1>
-<form method="POST" action="{{ url_for('create_trip') }}">
+<form method="POST" action="{{ url_for('create_trip') }}" style="background-color: #666666; padding: 10px; border-radius: 5px;">
     {{ form.hidden_tag() }}
 	<div>
         {{ form.country.label }}
-        {{ form.country(size=32, list="countryList", id="countryInput") }}
+        {{ form.country(size=20, list="countryList", id="countryInput") }}
 		{% for error in form.country.errors %}
             <span style="color: red;">{{ error }}</span>
         {% endfor %}
@@ -14,12 +19,13 @@
     </div>
     <div>
         {{ form.city.label }}
-        {{ form.city(size=32, list="cityList", id="cityInput", disabled='disabled') }}
+        {{ form.city(size=20, list="cityList", id="cityInput", disabled='disabled') }}
 		{% for error in form.city.errors %}
             <span style="color: red;">{{ error }}</span>
         {% endfor %}
 		<datalist id="cityList"></datalist>
     </div>
+	<br>
     <div>
         {{ form.start_date.label }}
         {{ form.start_date() }}
@@ -39,7 +45,7 @@
         {{ form.comments(rows=10, cols=40, class_="form-control") }}
 	</div>
     <div>
-        {{ form.submit() }}
+        {{ form.submit(class_="btn btn-lg btn-primary btn-block") }}
     </div>
 </form>
 

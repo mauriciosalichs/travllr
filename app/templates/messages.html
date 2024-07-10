@@ -1,23 +1,66 @@
 {% extends "base.html" %}
 {% block title %}Messages{% endblock %}
 {% block content %}
-<h1>Messages</h1>
-
-<h2>Sent Messages</h2>
-<ul>
-    {% for message in sent_messages %}
-        <li>
-            To: {{ message.recipient.username }} - {{ message.body }} - {{ message.timestamp }}
-        </li>
+<style>
+	body {
+		font-family: Arial, sans-serif;
+		margin: 20px;
+	}
+	.conversation.unread {
+		margin-bottom: 20px;
+		background-color: #FF6961;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 15px;
+		cursor: pointer;
+	}
+	.conversation.read {
+		margin-bottom: 20px;
+		background-color: #6FC276;
+		padding: 10px;
+		border: 1px solid #ccc;
+		border-radius: 15px;
+		cursor: pointer;
+	}
+	.conversation h3 {
+		margin-top: 0;
+	}
+	.conversation you {
+		background-color: #6FC2C6;
+		margin-top: 0;
+	}
+	.conversation .last-message {
+		margin-top: 5px;
+	}
+	.link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+	.link:hover {
+		text-decoration: none;
+		color: inherit;
+	}
+</style>
+<body>
+    <h1>Messages</h1>
+    
+    {% for conv in conversations %}
+	<a href="{{ url_for('message', user_id=conv.user.id) }}" class="link">
+		<div class="conversation {% if conv.last_message.read or conv.mysent %}read{% else %}unread{% endif %}">
+            <h5>{{ conv.user.username }}</h5>
+            {% if conv.last_message %}
+				<p class="last-message">
+				{% if conv.mysent %}
+                <strong>You sent</strong>
+				{% endif %}
+                {{ conv.last_message.content }}</p>
+            {% else %}
+                <p>No messages yet.</p>
+            {% endif %}
+        </div>
+	</a>
     {% endfor %}
-</ul>
-
-<h2>Received Messages</h2>
-<ul>
-    {% for message in received_messages %}
-        <li>
-            From: {{ message.author.username }} - {{ message.body }} - {{ message.timestamp }}
-        </li>
-    {% endfor %}
-</ul>
+    
+</body>
 {% endblock %}

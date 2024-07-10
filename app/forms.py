@@ -24,14 +24,14 @@ class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
-    remember = BooleanField('Remember Me')
+    remember = BooleanField('Recuerdame')
 
 class SearchForm(FlaskForm):
     keyword = StringField('Keyword:', validators=[Length(max=20)])
     min_age = StringField('Min Age:', validators=[Length(max=2)])
     max_age = StringField('Max Age:', validators=[Length(max=2)])
     country = SelectField('Country',choices=['']+countries_list, validators=[Optional()])
-    sorted = SelectField('Sorted By',choices=['Alphabetical','Last Login'], validators=[DataRequired()], default='Last Login')
+    sorted = SelectField('Sorted By',choices=['Alphabetical','Last Login','Tag Match'], validators=[DataRequired()], default='Last Login')
     submit = SubmitField('Search')
     
 class UpdateProfileForm(FlaskForm):
@@ -44,7 +44,7 @@ class UpdateProfileForm(FlaskForm):
     file = FileField('Update Profile Picture:', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     addtag = SubmitField('Add Tag')
     tags = []
-    gender = SelectField('Gender',choices=['Male ♂️','Female ♀️','Muxe ⚧','Other 🌈'],
+    gender = SelectField('Gender',choices=['Male ♂','Female ♀','Muxe ⚧','Other 🌈'],
     validators=[DataRequired()])
     submit = SubmitField('Update')
     delete_account = SubmitField('Delete User')
@@ -71,6 +71,7 @@ def validate_city(form, field):
         raise ValidationError('Not a valid country.')
     city = form.city.data
     if city not in cities_dict[country]:
+        print(city,cities_dict[country])
         raise ValidationError('Not a valid city.')
  
 class CreateTripForm(FlaskForm):
