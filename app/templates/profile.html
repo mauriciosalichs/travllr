@@ -5,7 +5,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
     <title>Profile</title>
 </head>
 <style>
@@ -51,6 +50,25 @@
 	text-decoration: none;
 	color: inherit;
 }
+.friend-button {
+    padding: 10px;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+}
+
+.friend-button.grey {
+    background-color: grey;
+}
+.friend-button.yellow {
+    background-color: yellow;
+}
+.friend-button.orange {
+    background-color: orange;
+}
+.friend-button.green {
+    background-color: green;
+}
 </style>
 <body>
     <div class="container">
@@ -77,6 +95,36 @@
                                 {% endif %}
 								{% if user != current_user %}
 								<a href="{{ url_for('message', user_id=user.id) }}" class="linklarge">✉</a>
+								<button id="friend-request-button" class="friend-button" onclick="openFriendRequestPopup({{ user.id }})">❤️</button>
+								<div id="friend-request-popup" style="display:none;">
+									<form id="friend-request-form">
+										<label for="message">Message:</label>
+										<textarea id="message" name="message"></textarea>
+										<button type="submit">Send Request</button>
+										<button type="button" onclick="closeFriendPopup()">Cancel</button>
+									</form>
+								</div>
+								<div id="friend-accept-popup" style="display:none;">
+									<form id="friend-accept-form">
+										<label id="friendMessage">here it comes the message...</label>
+										<button type="submit">Accept Friend</button>
+										<button type="button" id="reject">Reject</button>
+									</form>
+								</div>
+								<div id="friend-cancel-popup" style="display:none;">
+									<form id="friend-cancel-form">
+										<label for="message">Cancel Request?</label>
+										<button type="submit">Yes</button>
+										<button type="button" onclick="closeFriendPopup()">No</button>
+									</form>
+								</div>
+								<div id="friend-delete-popup" style="display:none;">
+									<form id="friend-delete-form">
+										<label for="message">Delete Friend?</label>
+										<button type="submit">Yes</button>
+										<button type="button" onclick="closeFriendPopup()">No</button>
+									</form>
+								</div>
 								{% endif %}
 								{% if current_trip %}
 								<div class="trip-info"><a href="{{ url_for('edit_trip', trip_id=current_trip.id) }}" class="link">Currently in {{ current_trip.city }}, {{ current_trip.country }} until {{ current_trip.end_date }}</a></div>
@@ -142,32 +190,128 @@
             </div>
         </div>
     </div>
-    
-    <script>
-    const userAge = document.getElementById('userAge');
-    if (userAge.textContent) {
-        const now = new Date();
-        var birthdate = new Date(userAge.textContent);
-        const diff = Math.abs(now - birthdate);
-        const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
-        userAge.textContent = age;
-    }
-	
-	function changeProfileImage(event) {
-        const input = event.target;
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profileImage').src = e.target.result;
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-    </script>
-    
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 </body>
+<script>
+	const userAge = document.getElementById('userAge');
+	if (userAge.textContent) {
+		const now = new Date();
+		var birthdate = new Date(userAge.textContent);
+		const diff = Math.abs(now - birthdate);
+		const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365)); 
+		userAge.textContent = age;
+	}
+
+	function changeProfileImage(event) {
+		const input = event.target;
+		if (input.files && input.files[0]) {
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				document.getElementById('profileImage').src = e.target.result;
+			}
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
+
+	function openFriendRequestPopup(userId) {
+		$.get(`/get_friend_status/${userId}`)
+		.done(function(response) {
+			var status = response.status;
+			if (status === 'none') {
+				$('#friend-request-popup').show();
+				$('#friend-request-form');
+			} else if (status === 'pending_sent') {
+				$('#friend-cancel-popup').show();
+				$('#friend-cancel-form');
+			} else if (status === 'pending_received') {
+				$('#friend-accept-popup').show();
+				console.log(response.message);
+				document.getElementById("friendMessage").innerHtml = response.message;
+				$('#friend-accept-form');
+			} else if (status === 'accepted') {
+				$('#friend-delete-popup').show();
+				$('#friend-delete-form');
+			}
+		});
+	}
+
+	function closeFriendPopup() {
+		$('#friend-request-popup').hide();
+		$('#friend-accept-popup').hide();
+		$('#friend-cancel-popup').hide();
+		$('#friend-delete-popup').hide();
+	}
+
+	$('#friend-request-form').on('submit', function(e) {
+		e.preventDefault();
+		var userId = {{ user.id }};
+		var message = $('#message').val();
+		$.post(`/send_friend_request/${userId}`, { message: message })
+			.done(function(response) {
+				closeFriendPopup();
+				updateFriendButtonStatus(userId);
+			})
+			.fail(function(error) {
+				alert(error.responseJSON.error);
+			});
+	});
+	$('#friend-accept-form').on('submit', function(e) {
+		e.preventDefault();
+		var userId = {{ user.id }};
+		$.post(`/accept_friend_request/${userId}`)
+			.done(function(response) {
+				closeFriendPopup();
+				updateFriendButtonStatus(userId);
+			})
+			.fail(function(error) {
+				alert(error.responseJSON.error);
+			});
+	});
+	$('#friend-cancel-form').on('submit', function(e) {
+		e.preventDefault();
+		var userId = {{ user.id }};
+		$.post(`/cancel_friend_request/${userId}`)
+			.done(function(response) {
+				closeFriendPopup();
+				updateFriendButtonStatus(userId);
+			})
+			.fail(function(error) {
+				alert(error.responseJSON.error);
+			});
+	});
+	$('#friend-delete-form').on('submit', function(e) {
+		e.preventDefault();
+		var userId = {{ user.id }};
+		$.post(`/cancel_friend_request/${userId}`)
+			.done(function(response) {
+				closeFriendPopup();
+				updateFriendButtonStatus(userId);
+			})
+			.fail(function(error) {
+				alert(error.responseJSON.error);
+			});
+	});
+
+	function updateFriendButtonStatus(userId) {
+		$.get(`/get_friend_status/${userId}`)
+			.done(function(response) {
+				var status = response.status;
+				var button = $('#friend-request-button');
+				if (status === 'none') {
+					button.removeClass().addClass('friend-button grey');
+				} else if (status === 'pending_sent') {
+					button.removeClass().addClass('friend-button orange');
+				} else if (status === 'pending_received') {
+					button.removeClass().addClass('friend-button yellow');
+				} else if (status === 'accepted') {
+					button.removeClass().addClass('friend-button green');
+				}
+			});
+	}
+
+	$(document).ready(function() {
+		var userId = {{ user.id }};
+		updateFriendButtonStatus(userId);
+	});
+</script>
 </html>
 {% endblock %}

@@ -3,16 +3,41 @@ from wtforms import StringField, PasswordField, SubmitField, TextAreaField, Date
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Optional, ValidationError, Length, Email, EqualTo
 from datetime import date
-import os
+import requests
 
-countries_file_path = os.path.dirname(os.path.realpath(__file__))+'./static/json/countries.json'
-cities_file_path = os.path.dirname(os.path.realpath(__file__))+'./static/json/cities.json'
+# Fetch countries and cities from the web
+countries_list = []
+cities_list = []
 
-with open(countries_file_path, 'r', encoding='utf-8') as f:
-        countries_list = eval(f.read())
-with open(cities_file_path, 'r', encoding='utf-8') as f:
-        cities_dict = eval(f.read())
-
+countries_code = {}
+url = f'http://api.geonames.org/countryInfoJSON?username=msalichs'
+response = requests.get(url)
+if response.status_code == 200:
+    countries_data = response.json()
+    for country in countries_data['geonames']:
+        countries_code[country['countryName']] = country['countryCode']
+        countries_list.append(country['countryName'])
+    countries_list.sort()
+else:
+    print("Unable to fetch countries data")
+    exit()
+    
+def fetch_cities_from(country_name):
+    global cities_list
+    if not country_name:
+        return []
+    cc = countries_code[country_name]
+    url = f'http://api.geonames.org/searchJSON?country={cc}&featureClass=P&maxRows=1000&username=msalichs'
+    response = requests.get(url)
+    if response.status_code != 200:
+        print("Unable to fetch cities data")
+        return []
+    cities_data = response.json()['geonames']
+    cities_list = [city['name'] for city in cities_data]
+    #cities_list.sort()
+    return cities_list
+        
+    
 class RegistrationForm(FlaskForm):
     username = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -34,10 +59,23 @@ class SearchForm(FlaskForm):
     sorted = SelectField('Sorted By',choices=['Alphabetical','Last Login','Tag Match'], validators=[DataRequired()], default='Last Login')
     submit = SubmitField('Search')
     
+def validate_country(form, field):
+    country = form.country.data
+    if country not in countries_list:
+        raise ValidationError('Not a valid country.')
+        
+def validate_city(form, field):
+    country = form.country.data
+    if country not in countries_list:
+        raise ValidationError('Not a valid country.')
+    city = form.city.data
+    if city not in cities_list:
+        raise ValidationError('Not a valid city.')
+ 
 class UpdateProfileForm(FlaskForm):
     username = StringField('Full Name:', validators=[DataRequired(), Length(max=100)])
-    country = StringField('Country:', validators=[DataRequired(), Length(max=30)])
-    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    country = StringField('Country:', validators=[DataRequired(), Length(max=30), validate_country])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30), validate_city])
     description = TextAreaField('Description:', validators=[Length(max=5000)])
     tag = StringField('Add Tag:', validators=[Length(max=300)])
     birthdate = DateField('Birthdate:', format='%Y-%m-%d', validators=[DataRequired()])
@@ -48,6 +86,7 @@ class UpdateProfileForm(FlaskForm):
     validators=[DataRequired()])
     submit = SubmitField('Update')
     delete_account = SubmitField('Delete User')
+    countries = countries_list
     
 def validate_start_date(form, field):
     start_date = form.start_date.data
@@ -59,20 +98,6 @@ def validate_end_date(form, field):
     end_date = form.end_date.data
     if start_date > end_date:
         raise ValidationError('End date must be after start date.')
-
-def validate_country(form, field):
-    country = form.country.data
-    if country not in countries_list:
-        raise ValidationError('Not a valid country.')
-        
-def validate_city(form, field):
-    country = form.country.data
-    if country not in countries_list:
-        raise ValidationError('Not a valid country.')
-    city = form.city.data
-    if city not in cities_dict[country]:
-        print(city,cities_dict[country])
-        raise ValidationError('Not a valid city.')
  
 class CreateTripForm(FlaskForm):
     country = StringField('Country', validators=[DataRequired(), Length(max=100), validate_country])
@@ -82,3 +107,4 @@ class CreateTripForm(FlaskForm):
     comments = TextAreaField('Tell us about your trip:', validators=[Length(max=1000)])
     submit = SubmitField('Create Trip')
     edit = SubmitField('Edit Trip')
+    countries = countries_list

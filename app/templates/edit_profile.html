@@ -105,56 +105,62 @@
 </div>
 
 <script>
-	const countryList = document.getElementById('countryList');
-	fetch('/static/json/countries.json')
-		.then(response => response.json())
-		.then(data => {
-	// Split the string into an array of countries
-		data.forEach(country => {
-			const listItem = document.createElement('option');
-			listItem.value = country;
-			countryList.appendChild(listItem);
-		})});
-		
 	const countryInput = document.getElementById('countryInput');
 	const cityInput = document.getElementById('cityInput');
-	
-	countryInput.addEventListener('blur', function(event) {
-		const selectedCountry = event.target.value;
-		const countryListItem = Array.from(countryList.getElementsByTagName('option')).find(opt => opt.value === selectedCountry.trim());
-		if (!countryListItem) {
-			alert("'" + selectedCountry + "' is not a valid country!");
-			countryInput.value = '';
-		} else {
-			cityInput.value = "";
-		}
-	});
-	cityInput.addEventListener('focus', function(event) {
+	const countryList = document.getElementById('countryList');
+	const cityList = document.getElementById('cityList');
+	const countries = {{ form.countries | tojson }};
+				
+	document.addEventListener('DOMContentLoaded', function() {
 		if (countryInput.value === '') {
-			alert("Select a valid country first!");
-			countryInput.focus();
-		} else {
-			const cityList = document.getElementById('cityList');
-			fetch('/static/json/cities.json')
+			loadCities();
+		}
+		fetch('/countries')
+			.then(response => response.json())
+			.then(data => {
+				data.forEach(country => {
+					const countryItem = document.createElement('option');
+					countryItem.textContent = country;
+					countryList.appendChild(countryItem);
+				});
+			})
+			.catch(error => console.error('Error fetching countries:', error));
+	});
+	
+	function checkCityAvailability() {
+		cityInput.value = 'Loading cities...';
+		loadCities();
+	}
+		
+	async function loadCities() {
+		const countryValue = countryInput.value;
+		cityList.innerHTML = "";
+		cityInput.disabled = true;
+		cityInput.classList.add('disabled');
+		if (countryValue !== '') {
+			cityInput.value = '';
+			fetch(`/cities?country=${countryValue}`)
 				.then(response => response.json())
 				.then(data => {
-				cityList.innerHTML = "";
-				data[countryInput.value].forEach(country => {
-					const listItem = document.createElement('option');
-					listItem.value = country;
-					cityList.appendChild(listItem);
-			})});
+					cityInput.value = ''
+					cityInput.disabled = false;
+					cityInput.classList.remove('disabled');
+					data.forEach(city => {
+						const cityItem = document.createElement('option');
+						cityItem.textContent = city;
+						cityList.appendChild(cityItem);
+					});
+				})
+				.catch(error => console.error('Error fetching cities:', error));
+		}
+	}
+		
+	countryInput.addEventListener('input', function() {
+		if (countries.includes(countryInput.value)) {
+			checkCityAvailability();
 		}
 	});
-	cityInput.addEventListener('blur', function(event) {
-		const selectedCity = event.target.value;
-		if (selectedCity === "") return;
-		const cityListItem = Array.from(cityList.getElementsByTagName('option')).find(opt => opt.value === selectedCity.trim());
-		if (!cityListItem) {
-			alert("'" + selectedCity + "' is not a valid city!");
-			cityInput.value = '';
-		}
-	});
+
 </script>
 
 <script>

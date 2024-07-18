@@ -50,48 +50,62 @@
 </form>
 
 <script>
-	function checkCityAvailability() {
-		const countryValue = document.getElementById('countryInput').value;
-		const cityInput = document.getElementById('cityInput');
-		if (countryValue !== '') {
-			cityInput.disabled = false;
-			cityInput.value = '';
-			cityInput.classList.remove('disabled');
-			const cityList = document.getElementById('cityList');
-			fetch('/static/json/cities.json')
-				.then(response => response.json())
-				.then(data => {
-				data[countryInput.value].forEach(country => {
-					const listItem = document.createElement('option');
-					listItem.value = country;
-					cityList.appendChild(listItem);
-			})});
-		} else {
-			cityList.innerHTML = "";
-			cityInput.disabled = true;
-			cityInput.classList.add('disabled');
-		}
-	}
-	
-	const countryList = document.getElementById('countryList');
-	fetch('/static/json/countries.json')
-		.then(response => response.json())
-		.then(data => {
-	// Split the string into an array of countries
-		data.forEach(country => {
-			const listItem = document.createElement('option');
-			listItem.value = country;
-			countryList.appendChild(listItem);
-		})});
-		
 	const countryInput = document.getElementById('countryInput');
 	const cityInput = document.getElementById('cityInput');
-	
-	document.getElementById('countryInput').addEventListener('input', function() {
-		checkCityAvailability();
+	const countryList = document.getElementById('countryList');
+	const cityList = document.getElementById('cityList');
+	const countries = {{ form.countries | tojson }};
+				
+	document.addEventListener('DOMContentLoaded', function() {
+		if (countryInput.value === '') {
+			loadCities();
+		}
+		fetch('/countries')
+			.then(response => response.json())
+			.then(data => {
+				data.forEach(country => {
+					const countryItem = document.createElement('option');
+					countryItem.textContent = country;
+					countryList.appendChild(countryItem);
+				});
+			})
+			.catch(error => console.error('Error fetching countries:', error));
 	});
 	
-	window.onload = checkCityAvailability();
+	function checkCityAvailability() {
+		cityInput.value = 'Loading cities...';
+		loadCities();
+	}
+		
+	async function loadCities() {
+		const countryValue = countryInput.value;
+		cityList.innerHTML = "";
+		cityInput.disabled = true;
+		cityInput.classList.add('disabled');
+		if (countryValue !== '') {
+			cityInput.value = '';
+			fetch(`/cities?country=${countryValue}`)
+				.then(response => response.json())
+				.then(data => {
+					cityInput.value = ''
+					cityInput.disabled = false;
+					cityInput.classList.remove('disabled');
+					data.forEach(city => {
+						const cityItem = document.createElement('option');
+						cityItem.textContent = city;
+						cityList.appendChild(cityItem);
+					});
+				})
+				.catch(error => console.error('Error fetching cities:', error));
+		}
+	}
+		
+	countryInput.addEventListener('input', function() {
+		if (countries.includes(countryInput.value)) {
+			checkCityAvailability();
+		}
+	});
+
 </script>
 
 {% endblock %}

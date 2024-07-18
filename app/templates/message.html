@@ -17,7 +17,7 @@
     <div class="chat-container">
         <h5>Conversation with <a href="{{ url_for('profile', user_id=other.id) }}" class="username">{{ other.username }}</a></h5>
         
-        <div class="messages">
+        <div id="message-list" class="messages">
             {% for message in messages %}
                 <div class="message {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
                     {{ message.content }}
@@ -27,11 +27,51 @@
         
         <div class="form-container">
             <form method="POST">
-                <input type="hidden" name="receiver_id" value="{{ other.id }}">
-                <textarea name="message" rows="3" style="width: 100%;" placeholder="Type your message here..."></textarea><br>
-                <button type="submit">Send</button>
+                <input id="messageInput" type="hidden" name="receiver_id" value="{{ other.id }}">
+                <textarea id="messageArea" name="message" rows="3" style="width: 100%;" placeholder="Type your message here..."></textarea><br>
+                <button type="button" onclick="sendMessage({{ other.id }})">Sendu</button>
             </form>
         </div>
     </div>
 </body>
+
+<script>
+	$(document).ready(function() {
+		setInterval(checkForNewMessages, 5000);
+	});
+	
+	document.getElementById('messageArea').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevents the default action of creating a new line
+            sendMessage({{ other.id }}); // Calls the sendMessage function
+        }
+    });
+	
+	function sendMessage(userId) {
+		var messageContent = document.getElementById('messageArea').value;
+		if (messageContent === "") {
+			return;
+		}
+		$.post(`/send_message/${userId}`, { message: messageContent })
+		.done(function(response) {
+			$('#message-list').append('<div class="message sent">' + messageContent + '</div>');
+			document.getElementById('messageArea').value = ""
+		})
+		.fail(function(error) {
+			alert(error.responseJSON.error);
+		});
+	}
+	
+	function checkForNewMessages() {
+		var userId = {{ other.id | tojson }};
+		$.get(`/check_new_messages/${userId}`)
+			.done(function(data) {
+				if (data.new_messages.length > 0) {
+					data.new_messages.forEach(function(message) {
+						$('#message-list').append('<div class="message received">' + message + '</div>');
+					});
+				}
+			});
+	}
+</script>
 {% endblock %}

@@ -29,7 +29,7 @@ class User(UserMixin, db.Model):
     tags = db.Column(db.String(500), nullable=True)
     birthdate = db.Column(db.Date)
     last_login = db.Column(db.DateTime)
-    friends = db.relationship('Friend', backref='user', lazy=True)
+    friends = db.relationship('Friend', backref='user', lazy=True) # Useless?
     trips = db.relationship('Trip', backref='traveler', lazy=True)
     
     def set_password(self, password):
@@ -45,6 +45,7 @@ class Friend(db.Model):
     id = db.Column(db.BigInteger, primary_key=True, default=lambda: generate_large_id('f'), unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     friend_id = db.Column(db.Integer, nullable=False)
+    message = db.Column(db.Text, nullable=True)
     is_accepted = db.Column(db.Boolean, nullable=False, default=False)
 
 class Trip(db.Model):

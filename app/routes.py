@@ -1,7 +1,7 @@
-from flask import render_template, url_for, flash, redirect, request
+from flask import render_template, url_for, flash, redirect, request, jsonify
 from app import app, db
-from app.forms import RegistrationForm, LoginForm, UpdateProfileForm, CreateTripForm, SearchForm
-from app.models import User, Trip, Message, Location
+from app.forms import RegistrationForm, LoginForm, UpdateProfileForm, CreateTripForm, SearchForm, fetch_cities_from, countries_list
+from app.models import User, Trip, Message, Friend, Location
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_
@@ -12,22 +12,38 @@ from datetime import datetime, date, timedelta
 
 # Variables
 unread_messages = 0
+pending_requests = 0
 
 @app.context_processor
 def inject_global_vars():
     return {
-        'unread_messages': unread_messages
+        'unread_messages': unread_messages,
+        'pending_requests': pending_requests
     }
 
+@app.route('/countries', methods=['GET'])
+def countries():
+    return countries_list
+    
+@app.route('/cities', methods=['GET'])
+def cities():
+    country = request.args.get('country')
+    return fetch_cities_from(country)
+    
 @app.route("/")
 @app.route("/home")
 def home():
-    global unread_messages
+    global unread_messages, pending_requests
     if current_user.is_authenticated:
         unread_messages = len(Message.query.filter(
                                       Message.receiver_id == current_user.id,
                                       Message.read == False).all())
-    return render_template('base.html')
+        pending_requests = len(Friend.query.filter(
+                                      Friend.friend_id == current_user.id,
+                                      Friend.is_accepted == False).all())
+        return render_template('base.html')
+    else:
+        return login()
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -200,7 +216,7 @@ def delete_trip(trip_id):
 def count_matching_tags(user_tags, current_user_tags_set):
     user_tags_set = set(user_tags.split(';'))
     return len(user_tags_set & current_user_tags_set)
-    
+
 @app.route('/search', methods=['GET','POST'])
 def search():
     form = SearchForm()
@@ -244,7 +260,7 @@ def search():
         print(form.errors)
     return render_template('search.html', form=form)
     
-@app.route("/city/<city>/<country>", methods=['GET', 'POST'])
+@app.route("/city/<country>/<city>", methods=['GET', 'POST'])
 @login_required
 def city(city, country):
     location = Location(city, country)
@@ -257,17 +273,11 @@ def notifications():
     # Lógica para manejar las notificaciones
     return render_template('notifications.html', title='Notifications')
 
+# -------- Messages --------
+
 @app.route('/message/<int:user_id>', methods=['GET', 'POST'])
 def message(user_id):
-    other = User.query.get(user_id)
-    
-    if request.method == 'POST':
-        content = request.form['message']
-        new_message = Message(sender_id=current_user.id, receiver_id=user_id, content=content)
-        db.session.add(new_message)
-        db.session.commit()
-        return redirect(url_for('message', user_id=user_id))
-        
+    other = User.query.get(user_id) 
     conversation_messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
         ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
@@ -298,3 +308,108 @@ def messages():
             })
     conversations.sort(key=lambda c: c['last_message'].timestamp, reverse=True)
     return render_template('messages.html', conversations=conversations)
+
+@app.route('/send_message/<int:user_id>', methods=['GET','POST'])
+@login_required
+def send_message(user_id):
+    if user_id == current_user.id:
+        return jsonify({"error": "Cant send a message to you"}), 403
+    content = request.form['message']
+    new_message = Message(sender_id=current_user.id, receiver_id=user_id, content=content)
+    db.session.add(new_message)
+    db.session.commit()
+    return jsonify(new_message=content)
+
+@app.route('/check_new_messages/<int:user_id>', methods=['GET'])
+@login_required
+def check_new_messages(user_id):
+    check_time = datetime.utcnow() - timedelta(seconds=5)
+    new_messages = Message.query.filter(
+        (Message.sender_id == user_id) & (Message.receiver_id == current_user.id),
+        Message.timestamp > check_time).order_by(Message.timestamp.asc()).all()
+    messages_contents=[message.content for message in new_messages]
+    return jsonify(new_messages=messages_contents)
+
+# -------- Friends requests --------
+
+@app.route('/send_friend_request/<int:user_id>', methods=['POST'])
+@login_required
+def send_friend_request(user_id):
+    friend_id = user_id
+    message = request.form.get('message')
+    # Check if request already exists
+    existing_request = Friend.query.filter_by(user_id=current_user.id, friend_id=friend_id).first()
+    if existing_request:
+        return jsonify({"error": "Request already exists"}), 400
+    friend_request = Friend(user_id=current_user.id, friend_id=friend_id, message=message)
+    db.session.add(friend_request)
+    db.session.commit()
+    return jsonify({"status": "Request sent"}), 200
+
+@app.route('/accept_friend_request/<int:user_id>', methods=['GET','POST'])
+@login_required
+def accept_friend_request(user_id):
+    friend_request = Friend.query.filter(Friend.user_id == user_id).first()
+    if not friend_request:
+        return jsonify({"error": "Friendship not existing"}), 403
+    friend_request.is_accepted = True
+    db.session.commit()
+    return jsonify({"status": "Friendship accepted"}), 200
+
+@app.route('/cancel_friend_request/<int:user_id>', methods=['GET','POST'])
+@login_required
+def cancel_friend_request(user_id):
+    friend_request = Friend.query.filter(
+        ((Friend.user_id == current_user.id) & (Friend.friend_id == user_id)) |
+        ((Friend.user_id == user_id) & (Friend.friend_id == current_user.id))
+    ).first()
+    if not friend_request:
+        return jsonify({"error": "Request not existing"}), 403
+    db.session.delete(friend_request)
+    db.session.commit()
+    return jsonify({"status": "Friendship canceled"}), 200
+    
+@app.route('/get_friend_status/<int:user_id>', methods=['GET'])
+@login_required
+def get_friend_status(user_id):
+    global pending_requests
+    pending_requests = len(Friend.query.filter(
+                           Friend.friend_id == current_user.id,
+                           Friend.is_accepted == False).all())
+    friend_request = Friend.query.filter(
+        ((Friend.user_id == current_user.id) & (Friend.friend_id == user_id)) |
+        ((Friend.user_id == user_id) & (Friend.friend_id == current_user.id))
+    ).first()
+    if not friend_request:
+        status = "none"
+    elif friend_request.is_accepted:
+        status = "accepted"
+    elif friend_request.user_id == current_user.id:
+        status = "pending_sent"
+    else:
+        status = "pending_received"
+    return jsonify({"status": status,"message": friend_request.message if friend_request else None}), 200
+    
+@app.route('/friends', methods=['GET', 'POST'])
+@login_required
+def friends():
+    accepted=[]
+    pending=[]
+    accepted_requests = Friend.query.filter(
+        (Friend.user_id == current_user.id) | (Friend.friend_id == current_user.id),
+         Friend.is_accepted==True).all()
+    pending_requests = Friend.query.filter(
+        (Friend.user_id == current_user.id) | (Friend.friend_id == current_user.id),
+         Friend.is_accepted==False).all()
+    for req in accepted_requests:
+        if req.user_id == current_user.id:
+            accepted.append(User.query.get_or_404(req.friend_id))
+        else:
+            accepted.append(User.query.get_or_404(req.user_id))
+    for req in pending_requests:
+        if req.user_id == current_user.id:
+            pending.append(User.query.get_or_404(req.friend_id))
+        else:
+            pending.append(User.query.get_or_404(req.user_id))
+    return render_template('friends.html', accepted=accepted, acc_len=len(accepted),
+                                           pending=pending, pen_len=len(pending))
