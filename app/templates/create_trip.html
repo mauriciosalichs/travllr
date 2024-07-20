@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Create Trip{% endblock %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<h1>Create a New Trip</h1>
-<form method="POST" action="{{ url_for('create_trip') }}" style="background-color: #666666; padding: 10px; border-radius: 5px;">
+
+<form method="POST" action="{{ url_for('create_trip') }}">
+	<br><h1>Create a New Trip</h1>
     {{ form.hidden_tag() }}
 	<div>
         {{ form.country.label }}

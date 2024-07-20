@@ -1,53 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Search Results{% endblock %}
 {% block content %}
-<style>
-    .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f8f9fa;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .user-list {
-        list-style: none;
-        padding: 0;
-    }
-    .user-list li {
-        margin: 10px 0;
-        padding: 10px;
-        border-bottom: 1px solid #ddd;
-    }
-	.profile-image {
-		width: 50px;
-		height: 50px;
-		border-radius: 50%;
-		margin-right: 15px;
-	}
-	.user-info {
-		display: flex;
-		flex-direction: column;
-	}
-</style>
 
-<div class="container">
-    <h2>Search Results</h2>
-    {% if users %}
-        <ul class="user-list">
-            {% for user in users %}
-                <li>
-					{% if user.image_file %}
-					<img src="data:image/jpeg;base64,{{ user.image_file }}" class="profile-image">
-					{% else %}
-					<img src="{{ url_for('static', filename='img/default.jpg') }}" class="profile-image">
-					{% endif %}
-                    <a href="{{ url_for('profile', user_id=user.id) }}" class="username">{{ user.username }}</a>
-                    {{ user.city }}, {{ user.country }}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No active users found.</p>
-    {% endif %}
-</div>
+<br><h2>Search Results</h2>
+{% if users %}
+	<ul class="user-list">
+		{% for user in users %}
+		<div class="user-info">
+			{% if user.image_file %}
+			<img src="data:image/jpeg;base64,{{ user.image_file }}" style="width: 60px; height: 60px">
+			{% else %}
+			<img src="{{ url_for('static', filename='img/default.jpg') }}" style="width: 60px; height: 60px">
+			{% endif %}
+			<div class="user-details">
+				<a href="{{ url_for('profile', user_id=user.id) }}" class="nav-link">{{ user.username }}</a>
+				<span class="user-details">{{ user.city }}, {{ user.country }}</span>
+			</div>
+		</div>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>No active users found.</p>
+{% endif %}
+
 {% endblock %}

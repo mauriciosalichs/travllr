@@ -1,99 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Search Results{% endblock %}
 {% block content %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Friends</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#accepted-tab').click(function() {
-                $('#pending-friends').hide();
-                $('#accepted-friends').show();
-                $('#accepted-tab').addClass('active');
-                $('#pending-tab').removeClass('active');
-            });
+<script>
+	$(document).ready(function() {
+		$('#accepted-tab').click(function() {
+			$('#pending-friends').hide();
+			$('#accepted-friends').show();
+			$('#accepted-tab').addClass('active');
+			$('#pending-tab').removeClass('active');
+		});
 
-            $('#pending-tab').click(function() {
-                $('#accepted-friends').hide();
-                $('#pending-friends').show();
-                $('#pending-tab').addClass('active');
-                $('#accepted-tab').removeClass('active');
-            });
+		$('#pending-tab').click(function() {
+			$('#accepted-friends').hide();
+			$('#pending-friends').show();
+			$('#pending-tab').addClass('active');
+			$('#accepted-tab').removeClass('active');
+		});
 
-            // Initially show accepted friends and hide pending friends
-            $('#accepted-friends').show();
-            $('#pending-friends').hide();
-            $('#accepted-tab').addClass('active');
-        });
-    </script>
-    <style>
-        .tab {
-            cursor: pointer;
-            padding: 10px;
-            background-color: #f1f1f1;
-            border: 1px solid #ccc;
-            display: inline-block;
-        }
+		// Initially show accepted friends and hide pending friends
+		$('#accepted-friends').show();
+		$('#pending-friends').hide();
+		$('#accepted-tab').addClass('active');
+	});
+</script>
 
-        .tab.active {
-            background-color: #ccc;
-        }
+<br><h1>Friends</h1>
+<div>
+	<div id="accepted-tab" class="tab">Accepted ({{acc_len}})</div>
+	<div id="pending-tab" class="tab">Pending ({{pen_len}})</div>
+</div>
 
-        .friend-list {
-            margin-top: 20px;
-        }
-		.profile-image {
-			width: 50px;
-			height: 50px;
-			border-radius: 50%;
-			margin-right: 15px;
-		}
-    </style>
-</head>
-<body>
-    <h1>Friends</h1>
-    <div>
-        <div id="accepted-tab" class="tab">Accepted ({{acc_len}})</div>
-        <div id="pending-tab" class="tab">Pending ({{pen_len}})</div>
-    </div>
+<div id="accepted-friends" class="friend-list">
+	{% if not accepted %}
+	<h3>No friends to show :(</h3>
+	{% endif %}
+	<ul>
+		{% for user in accepted %}
+		<div class="user-info">
+			{% if user.image_file %}
+			<img src="data:image/jpeg;base64,{{ user.image_file }}" style="width: 60px; height: 60px">
+			{% else %}
+			<img src="{{ url_for('static', filename='img/default.jpg') }}" class="user-image">
+			{% endif %}
+			<div class="user-details">
+				<a href="{{ url_for('profile', user_id=user.id) }}" class="nav-link">{{ user.username }}</a>
+				<span class="user-details">{{ user.city }}, {{ user.country }}</span>
+			</div>
+		</div>
+		{% endfor %}
+	</ul>
+</div>
 
-    <div id="accepted-friends" class="friend-list">
-		{% if not accepted %}
-		<h3>No friends to show :(</h3>
-		{% endif %}
-        <ul>
-            {% for user in accepted %}
-                <li>
-					{% if user.image_file %}
-					<img src="data:image/jpeg;base64,{{ user.image_file }}" class="profile-image">
-					{% else %}
-					<img src="{{ url_for('static', filename='img/default.jpg') }}" class="profile-image">
-					{% endif %}
-                    <a href="{{ url_for('profile', user_id=user.id) }}" class="username">{{ user.username }}</a>
-                    {{ user.city }}, {{ user.country }}
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <div id="pending-friends" class="friend-list">
-        <ul>
-            {% for user in pending %}
-                <li>
-					{% if user.image_file %}
-					<img src="data:image/jpeg;base64,{{ user.image_file }}" class="profile-image">
-					{% else %}
-					<img src="{{ url_for('static', filename='img/default.jpg') }}" class="profile-image">
-					{% endif %}
-                    <a href="{{ url_for('profile', user_id=user.id) }}" class="username">{{ user.username }}</a>
-                    {{ user.city }}, {{ user.country }}
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
-</body>
-</html>
+<div id="pending-friends" class="friend-list">
+	<ul>
+		{% for user in pending %}
+			<li>
+				{% if user.image_file %}
+				<img src="data:image/jpeg;base64,{{ user.image_file }}" class="profile-image">
+				{% else %}
+				<img src="{{ url_for('static', filename='img/default.jpg') }}" class="profile-image">
+				{% endif %}
+				<a href="{{ url_for('profile', user_id=user.id) }}" class="username">{{ user.username }}</a>
+				{{ user.city }}, {{ user.country }}
+			</li>
+		{% endfor %}
+	</ul>
+</div>
 {% endblock %}

@@ -1,66 +1,86 @@
 {% extends "base.html" %}
 {% block title %}Messages{% endblock %}
 {% block content %}
-<style>
-	body {
-		font-family: Arial, sans-serif;
-		margin: 20px;
-	}
-	.conversation.unread {
-		margin-bottom: 20px;
-		background-color: #FF6961;
-		padding: 10px;
-		border: 1px solid #ccc;
-		border-radius: 15px;
-		cursor: pointer;
-	}
-	.conversation.read {
-		margin-bottom: 20px;
-		background-color: #6FC276;
-		padding: 10px;
-		border: 1px solid #ccc;
-		border-radius: 15px;
-		cursor: pointer;
-	}
-	.conversation h3 {
-		margin-top: 0;
-	}
-	.conversation you {
-		background-color: #6FC2C6;
-		margin-top: 0;
-	}
-	.conversation .last-message {
-		margin-top: 5px;
-	}
-	.link {
-		display: block;
-		text-decoration: none;
-		color: inherit;
-	}
-	.link:hover {
-		text-decoration: none;
-		color: inherit;
-	}
-</style>
-<body>
-    <h1>Messages</h1>
+
+<br><h1>Messages</h1><br>
+
+{% if conversations %}
+<label>
+  <input type="checkbox" id="mark-all">
+  Mark all
+</label>
+{% else %}
+No messages yet :(
+{% endif %}
+
+<button id="delete-selected" style="display: none; margin-left: 20px;">🗑</button>
+
+{% for conv in conversations %}
+<div class="conversation-container">
+  <!-- Checkbox for each conversation -->
+  <input type="checkbox" class="conversation-checkbox" data-conversation-id="{{ conv.user.id }}">
+
+  <a href="{{ url_for('message', user_id=conv.user.id) }}" class="link">
+    <div class="conversation {% if conv.last_message.read or conv.mysent %}read{% else %}unread{% endif %}">
+      <h5>{{ conv.user.username }}</h5>
+      {% if conv.last_message %}
+        <p class="last-message">
+          {% if conv.mysent %}
+            <strong>You sent</strong>
+          {% endif %}
+          {{ conv.last_message.content }}
+        </p>
+        <p class="last-message"><strong>on </strong>{{conv.last_message.timestamp.strftime('%d/%m/%Y %H:%M')}} (UTC)</p>
+      {% else %}
+        <p>No messages yet.</p>
+      {% endif %}
+    </div>
+  </a>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const markAllCheckbox = document.getElementById('mark-all');
+  const deleteButton = document.getElementById('delete-selected');
+  const conversationCheckboxes = document.querySelectorAll('.conversation-checkbox');
+
+  // Toggle all checkboxes when the general checkbox is clicked
+  markAllCheckbox.addEventListener('change', function () {
+    conversationCheckboxes.forEach(checkbox => {
+      checkbox.checked = markAllCheckbox.checked;
+    });
+    toggleDeleteButton();
+  });
+
+  // Show/hide delete button based on selection
+  conversationCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', toggleDeleteButton);
+  });
+
+  function toggleDeleteButton() {
+    const anyChecked = Array.from(conversationCheckboxes).some(checkbox => checkbox.checked);
+    deleteButton.style.display = anyChecked ? 'inline' : 'none';
+  }
+
+  // Confirm deletion and handle deletion logic
+  deleteButton.addEventListener('click', function () {
+    if (confirm('Are you sure you want to delete the selected conversations?')) {
+      const selectedConversationIds = Array.from(conversationCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.getAttribute('data-conversation-id'));
+
+      // Implement your deletion logic here. For example, you can make an AJAX request to delete the selected conversations.
+      $.post(`/delete_conversations/${selectedConversationIds}`)
+		.done(function(response) {
+			window.location.reload();
+		})
+		.fail(function(error) {
+			alert(error.responseJSON.error);
+		});
+    }
+  });
+});
+</script>
     
-    {% for conv in conversations %}
-	<a href="{{ url_for('message', user_id=conv.user.id) }}" class="link">
-		<div class="conversation {% if conv.last_message.read or conv.mysent %}read{% else %}unread{% endif %}">
-            <h5>{{ conv.user.username }}</h5>
-            {% if conv.last_message %}
-				<p class="last-message">
-				{% if conv.mysent %}
-                <strong>You sent</strong>
-				{% endif %}
-                {{ conv.last_message.content }}</p>
-            {% else %}
-                <p>No messages yet.</p>
-            {% endif %}
-        </div>
-	</a>
-    {% endfor %}
-    
-</body>
 {% endblock %}

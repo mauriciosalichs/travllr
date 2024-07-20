@@ -5,8 +5,7 @@ from app.models import User, Trip, Message, Friend, Location
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_
-import re
-import base64
+import re, base64
 from datetime import datetime, date, timedelta
 
 
@@ -122,6 +121,7 @@ def profile(user_id):
 def edit_profile():
     form = UpdateProfileForm()
     if request.method == 'GET' or not form.validate_on_submit():
+        print("F",form)
         form.username.data = current_user.username
         form.gender.data = current_user.gender
         form.description.data = current_user.description
@@ -130,6 +130,7 @@ def edit_profile():
         form.birthdate.data = current_user.birthdate
         form.tags = current_user.tags.split(';')[:-1] if current_user.tags else []
     if form.validate_on_submit():
+        print('G',form)
         if form.delete_account.data:
             db.session.delete(current_user)
             db.session.commit()
@@ -329,6 +330,20 @@ def check_new_messages(user_id):
         Message.timestamp > check_time).order_by(Message.timestamp.asc()).all()
     messages_contents=[message.content for message in new_messages]
     return jsonify(new_messages=messages_contents)
+    
+@app.route('/delete_conversations/<user_ids>', methods=['GET','POST'])
+@login_required
+def delete_converations(user_ids):
+    list_ids = user_ids.split(',')
+    conversation_messages = []
+    for user_id in list_ids:
+        conversation_messages += Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+            ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))).all()
+    for conv in conversation_messages:
+        db.session.delete(conv)
+    db.session.commit()
+    return messages()
 
 # -------- Friends requests --------
 

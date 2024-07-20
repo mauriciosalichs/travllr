@@ -1,39 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Message{% endblock %}
+{% block title %}Message{% endblock%}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <title>Conversation</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .chat-container { width: 90%; margin: 0 auto; }
-        .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
-        .message.sent { background-color: #d1e7dd; text-align: right; }
-		.message.received { background-color: #f8d7da; text-align: left; }
-        .form-container { margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="chat-container">
-        <h5>Conversation with <a href="{{ url_for('profile', user_id=other.id) }}" class="username">{{ other.username }}</a></h5>
-        
-        <div id="message-list" class="messages">
-            {% for message in messages %}
-                <div class="message {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
-                    {{ message.content }}
-                </div>
-            {% endfor %}
-        </div>
-        
-        <div class="form-container">
-            <form method="POST">
-                <input id="messageInput" type="hidden" name="receiver_id" value="{{ other.id }}">
-                <textarea id="messageArea" name="message" rows="3" style="width: 100%;" placeholder="Type your message here..."></textarea><br>
-                <button type="button" onclick="sendMessage({{ other.id }})">Sendu</button>
-            </form>
-        </div>
-    </div>
-</body>
+
+<style>
+	.message { margin: 10px 0; padding: 10px; border-radius: 5px; width: 70%; }
+	.message.sent { background-color: #d1e7dd; text-align: right; margin-left: auto; }
+	.message.received { background-color: #f8d7da; text-align: left; }
+	.form-container { margin-top: 20px; }
+	.message-time { display: block; font-size: 0.8em; color: #888; margin-top: 5px; }
+	.date-divider { font-weight: bold; }
+</style>
+
+<br>
+<h5>Conversation with</h5>
+<h5><a href="{{ url_for('profile', user_id=other.id) }}" class="username">{{ other.username }}</a></h5>
+<br>
+
+<div id="message-list" class="messages">
+	{% for message in messages %}
+		<div class="message {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-datetime="{{ message.timestamp }}">
+			{{ message.content }}
+			<span class="message-time"></span>
+		</div>
+	{% endfor %}
+</div>
+
+<div class="form-container">
+	<form method="POST">
+		<input id="messageInput" type="hidden" name="receiver_id" value="{{ other.id }}">
+		<textarea id="messageArea" name="message" rows="3" style="width: 100%;" placeholder="Type your message here..."></textarea><br>
+		<button type="button" onclick="sendMessage({{ other.id }})">Sendu</button>
+	</form>
+</div>
 
 <script>
 	$(document).ready(function() {
@@ -68,10 +66,50 @@
 			.done(function(data) {
 				if (data.new_messages.length > 0) {
 					data.new_messages.forEach(function(message) {
-						$('#message-list').append('<div class="message received">' + message + '</div>');
+						$('#message-list').append('<div class="message received">' + message + '</div><span class="message-time">Now</span>');
 					});
 				}
 			});
 	}
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const messageList = document.getElementById('message-list');
+        const messages = messageList.children;		
+        let previousDate = null;
+
+        for (let message of messages) {
+            const datetime = new Date(message.getAttribute('data-datetime'));
+            const localDatetime = new Date(datetime.getTime() - datetime.getTimezoneOffset() * 60000);
+
+            const day = String(datetime.getUTCDate()).padStart(2, '0');
+            const month = String(datetime.getUTCMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const year = datetime.getUTCFullYear();
+			const hours = String(localDatetime.getHours()).padStart(2, '0');
+            const minutes = String(localDatetime.getMinutes()).padStart(2, '0');
+
+            const formattedDate = `${day}/${month}/${year}`;
+			const formattedTime = `${hours}:${minutes}`;
+			const timeSpan = message.querySelector('.message-time');
+            timeSpan.textContent = formattedTime;
+
+            if (formattedDate !== previousDate) {
+                // Create a new date div
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'date-divider';
+                dateDiv.textContent = formattedDate;
+                dateDiv.style.textAlign = 'center';
+                dateDiv.style.margin = '10px 0';
+
+                // Insert the date div before the current message
+                messageList.insertBefore(dateDiv, message);
+
+                previousDate = formattedDate;
+            }
+        }
+    });
+	window.scrollTo(0, document.body.scrollHeight);
+</script>
+
 {% endblock %}

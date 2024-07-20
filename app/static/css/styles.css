@@ -1,14 +1,10 @@
-body {
-    font-family: Arial, sans-serif;
-}
-
 nav ul {
     list-style-type: none;
 }
 
 nav ul li {
     display: inline;
-    margin-right: 10px;
+    margin-right: 60px;
 }
 
 .flash {
@@ -26,15 +22,17 @@ nav ul li {
     background-color: #f8d7da;
     color: #721c24;
 }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
 .container {
-	background-color: #ffffff;
-	border-radius: 10px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	min-width: 600px;
-	max-width: 600px;
-	width: 100%;
-	text-align: center;
-	margin-top: 80px; /* Adjusted for fixed navbar */
+	background-color: #D2D2CF;
+	text-align: left;
+	flex: 1;
 }
 .form-group {
 	margin-bottom: 20px;
@@ -90,4 +88,151 @@ nav ul li {
 	width: 150px;
 	height: 150px;
 	object-fit: cover;
+}
+.notification-badge {
+	position: absolute;
+	bottom: -3px;
+	right: 0px;
+	width: 20px;
+	height: 20px;
+	background-color: red;
+	color: white;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	font-weight: bold;
+}
+.nav-item {
+	position: relative;
+	display: inline-block;
+}
+.nav-link {
+	margin-left: 10px;
+	display: block;
+	text-decoration: none;
+	color: inherit;
+}
+.nav-link:hover {
+	text-decoration: none;
+	color: inherit;
+}
+.profile-image {
+	width: 10px;
+	height: 10px;
+	border-radius: 10%;
+	margin-right: 105px;
+}
+.tab {
+	cursor: pointer;
+	padding: 10px;
+	width: 48%;
+	background-color: #f1f1f1;
+	border: 1px solid #ccc;
+	display: inline-block;
+}
+
+.tab.active {
+	background-color: #cca;
+}
+
+.friend-list {
+	margin-top: 20px;
+}
+
+% Edit profile
+
+.navbar {
+	width: 100%;
+	padding: 10px;
+	background-color: #343a40;
+	display: flex;
+	justify-content: flex-start;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 1000;
+}
+.container {
+	width: 100%;
+	margin-top: 80px; /* Adjusted for fixed navbar */
+}
+.btn-red {
+  background-color: red;
+  border-color: red;
+  color: white; /* Optional, if you want to change the text color */
+}
+
+% Messages
+
+.conversation.unread {
+	margin-bottom: 20px;
+	background-color: #FF6961;
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 15px;
+	cursor: pointer;
+}
+.conversation.read {
+	margin-bottom: 20px;
+	background-color: #6FC276;
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 15px;
+	cursor: pointer;
+}
+.conversation h3 {
+	margin-top: 0;
+}
+.conversation you {
+	background-color: #6FC2C6;
+	margin-top: 0;
+}
+.conversation .last-message {
+	margin-top: 5px;
+}
+.link {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+}
+.link:hover {
+	text-decoration: none;
+	color: inherit;
+}
+
+% Users
+
+.user-list {
+	list-style: none;
+	padding: 0;
+}
+.user-list li {
+	margin: 10px 0;
+	padding: 10px;
+	border-bottom: 1px solid #ddd;
+}
+.profile-image {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	margin-right: 15px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+	text-decoration: none; /* Remove underline from link */
+	margin-left: 15px;
+}
+
+.user-details a {
+    font-weight: bold; /* Adjust as needed */
+	margin-left: 0px;
 }

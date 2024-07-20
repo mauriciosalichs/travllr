@@ -1,12 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Profile{% endblock %}
 {% block content %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Profile</title>
-</head>
+
 <style>
 .tag-label {
     display: inline-block;
@@ -53,10 +48,14 @@
 .friend-button {
     padding: 10px;
     border-radius: 50%;
-    color: white;
     cursor: pointer;
 }
-
+.message-button {
+    padding: 10px;
+    border-radius: 50%;
+    background-color: #6488EA;
+    cursor: pointer;
+}
 .friend-button.grey {
     background-color: grey;
 }
@@ -70,127 +69,122 @@
     background-color: green;
 }
 </style>
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="profile-info">
-							{% if user.image_file %}
-                            <img src="data:image/jpeg;base64,{{ user.image_file }}" alt="Profile Image" width="100" height="100" id="profileImage">
-							{% else %}
-							<img src="{{ url_for('static', filename='img/default.jpg') }}" alt="Profile Image" width="100" height="100" id="profileImage">
-							{% endif %}
-                            <div>
-								<h2>{{ user.username }}</h2>
-								{% if user.gender %}
-								<span class="tag-label-info">{{user.gender[-1]}}</span>
-								{% endif %}
-                                {% if user.birthdate %}
-                                <span class="tag-label-info" id="userAge">{{ user.birthdate }}</span>
-                                {% endif %}
-                                {% if user.city and user.country %}
-                                <span class="tag-label-info">🚩 {{ user.city }}, {{ user.country }}</span>
-                                {% endif %}
-								{% if user != current_user %}
-								<a href="{{ url_for('message', user_id=user.id) }}" class="linklarge">✉</a>
-								<button id="friend-request-button" class="friend-button" onclick="openFriendRequestPopup({{ user.id }})">❤️</button>
-								<div id="friend-request-popup" style="display:none;">
-									<form id="friend-request-form">
-										<label for="message">Message:</label>
-										<textarea id="message" name="message"></textarea>
-										<button type="submit">Send Request</button>
-										<button type="button" onclick="closeFriendPopup()">Cancel</button>
-									</form>
-								</div>
-								<div id="friend-accept-popup" style="display:none;">
-									<form id="friend-accept-form">
-										<label id="friendMessage">here it comes the message...</label>
-										<button type="submit">Accept Friend</button>
-										<button type="button" id="reject">Reject</button>
-									</form>
-								</div>
-								<div id="friend-cancel-popup" style="display:none;">
-									<form id="friend-cancel-form">
-										<label for="message">Cancel Request?</label>
-										<button type="submit">Yes</button>
-										<button type="button" onclick="closeFriendPopup()">No</button>
-									</form>
-								</div>
-								<div id="friend-delete-popup" style="display:none;">
-									<form id="friend-delete-form">
-										<label for="message">Delete Friend?</label>
-										<button type="submit">Yes</button>
-										<button type="button" onclick="closeFriendPopup()">No</button>
-									</form>
-								</div>
-								{% endif %}
-								{% if current_trip %}
-								<div class="trip-info"><a href="{{ url_for('edit_trip', trip_id=current_trip.id) }}" class="link">Currently in {{ current_trip.city }}, {{ current_trip.country }} until {{ current_trip.end_date }}</a></div>
-								{% endif %}
-                            </div>
-                        </div>
-                        <hr>
-                        {% if user.description %}
-                        <h5 class="card-title">DESCRIPTION</h5>
-                        <p class="card-text">{{ user.description }}</p>
-                        {% endif %}
-						{% if current_trip %}
-						<p class="trip-info">{{ current_trip.comments }}</p>
-						{% endif %}
-                        {% if user.tags %}
-                        <h5 class="card-title">TAGS</h5>
-                        <div id="tags-container">
-                            {% for tag in tags %}
-                                <span class="tag-label">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-						<br>
-						{% if past_trips %}
-						<h5 class="card-title">TRIPS HISTORY</h5>
-						<ul>
-						{% for trip in past_trips %}
-                            <li>
-                            <span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
-                            <p>{{ trip.start_date }} - {{ trip.end_date }}</p>
-                            </li>
-						{% endfor %}
-						</ul>
-						{% endif %}
-                        <br>
-                        <h5 class="card-title">UPCOMING TRIPS</h5>
-                        {% if future_trips %}
-                        <ul>
-                            {% for trip in future_trips %}
-                            <li>
-                            <span class="tag-label"><a href="{{ url_for('city', city=trip.city, country=trip.country) }}" class="link">{{ trip.city }}, {{ trip.country }}</a></span>
-                            <p>{{ trip.start_date }} - {{ trip.end_date }}
-							{% if user == current_user %}
-							<a href="{{ url_for('edit_trip', trip_id=trip.id) }}" class="link">✎</a>
-							<a href="{{ url_for('delete_trip', trip_id=trip.id) }}" class="link">❌</a>
-							{% endif %}
-							</p>
-                            </li>
-							{% if trip.comments %}
-							<p>{{ trip.comments }}</p>
-							{% endif %}
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p class="card-text">No trips ahead :(</p>
-                        {% endif %}
-                        <br>
-                        {% if user == current_user %}
-                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Edit Profile</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
+
+<div class="card">
+	<div class="card-body">
+		<h2>{{ user.username }}</h2>
+		<div class="profile-info">
+			{% if user.image_file %}
+			<img src="data:image/jpeg;base64,{{ user.image_file }}" width="100" height="100" class="profile-image">
+			{% else %}
+			<img src="{{ url_for('static', filename='img/default.jpg') }}" width="100" height="100" class="profile-image">
+			{% endif %}
+			<div>
+				{% if user != current_user %}
+				<button class="message-button" onclick="location.href='{{ url_for('message', user_id=user.id) }}'">📖</button>
+				<button id="friend-request-button" class="friend-button" onclick="openFriendRequestPopup({{ user.id }})">❤️</button>
+				<div id="friend-request-popup" style="display:none;">
+					<form id="friend-request-form">
+						<label for="message">Message:</label>
+						<textarea id="message" name="message"></textarea>
+						<button type="submit">Send Request</button>
+						<button type="button" onclick="closeFriendPopup()">Cancel</button>
+					</form>
+				</div>
+				<div id="friend-accept-popup" style="display:none;">
+					<form id="friend-accept-form">
+						<label id="friendMessage">here it comes the message...</label>
+						<button type="submit">Accept Friend</button>
+						<button type="button" id="reject">Reject</button>
+					</form>
+				</div>
+				<div id="friend-cancel-popup" style="display:none;">
+					<form id="friend-cancel-form">
+						<label for="message">Cancel Request?</label>
+						<button type="submit">Yes</button>
+						<button type="button" onclick="closeFriendPopup()">No</button>
+					</form>
+				</div>
+				<div id="friend-delete-popup" style="display:none;">
+					<form id="friend-delete-form">
+						<label for="message">Delete Friend?</label>
+						<button type="submit">Yes</button>
+						<button type="button" onclick="closeFriendPopup()">No</button>
+					</form>
+				</div>
+				{% endif %}
+				{% if current_trip %}
+				<div class="trip-info"><a href="{{ url_for('edit_trip', trip_id=current_trip.id) }}" class="link">Currently in {{ current_trip.city }}, {{ current_trip.country }} until {{ current_trip.end_date }}</a></div>
+				{% endif %}
+			</div>
+		</div>
+		<br>
+		{% if user.gender %}
+		<span class="tag-label-info">{{user.gender[-1]}}</span>
+		{% endif %}
+		{% if user.birthdate %}
+		<span class="tag-label-info" id="userAge">{{ user.birthdate }}</span>
+		{% endif %}
+		{% if user.city and user.country %}
+		<span>🚩 {{ user.city }}, {{ user.country }}</span>
+		{% endif %}
+		<hr>
+		{% if user.description %}
+		<h5 class="card-title">DESCRIPTION</h5>
+		<p class="card-text">{{ user.description }}</p>
+		{% endif %}
+		{% if current_trip %}
+		<p class="trip-info">{{ current_trip.comments }}</p>
+		{% endif %}
+		{% if user.tags %}
+		<h5 class="card-title">TAGS</h5>
+		<div id="tags-container">
+			{% for tag in tags %}
+				<span class="tag-label">{{ tag }}</span>
+			{% endfor %}
+		</div>
+		{% endif %}
+		<br>
+		{% if past_trips %}
+		<h5 class="card-title">TRIPS HISTORY</h5>
+		<ul>
+		{% for trip in past_trips %}
+			<li>
+			<span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
+			<p>{{ trip.start_date }} - {{ trip.end_date }}</p>
+			</li>
+		{% endfor %}
+		</ul>
+		{% endif %}
+		<br>
+		<h5 class="card-title">UPCOMING TRIPS</h5>
+		{% if future_trips %}
+		<ul>
+			{% for trip in future_trips %}
+			<li>
+			<span class="tag-label"><a href="{{ url_for('city', city=trip.city, country=trip.country) }}" class="link">{{ trip.city }}, {{ trip.country }}</a></span>
+			<p>{{ trip.start_date }} - {{ trip.end_date }}
+			{% if user == current_user %}
+			<a href="{{ url_for('edit_trip', trip_id=trip.id) }}" class="link">✎</a>
+			<a href="{{ url_for('delete_trip', trip_id=trip.id) }}" class="link">❌</a>
+			{% endif %}
+			</p>
+			</li>
+			{% if trip.comments %}
+			<p>{{ trip.comments }}</p>
+			{% endif %}
+			{% endfor %}
+		</ul>
+		{% else %}
+		<p class="card-text">No trips ahead :(</p>
+		{% endif %}
+		<br>
+		{% if user == current_user %}
+		<a href="{{ url_for('edit_profile') }}" class="btn btn-primary">Edit Profile</a>
+		{% endif %}
+	</div>
+</div>
+
 <script>
 	const userAge = document.getElementById('userAge');
 	if (userAge.textContent) {
@@ -313,5 +307,5 @@
 		updateFriendButtonStatus(userId);
 	});
 </script>
-</html>
+
 {% endblock %}
