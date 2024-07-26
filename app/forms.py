@@ -70,6 +70,7 @@ def validate_city(form, field):
         raise ValidationError('Not a valid country.')
     city = form.city.data
     if city not in cities_list:
+        print(city,cities_list)
         raise ValidationError('Not a valid city.')
  
 class UpdateProfileForm(FlaskForm):

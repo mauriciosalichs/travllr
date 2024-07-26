@@ -41,12 +41,17 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
 
+    def __str__(self):
+        return f"-UserID: {self.id}, Name: {self.username}-"
+
 class Friend(db.Model):
     id = db.Column(db.BigInteger, primary_key=True, default=lambda: generate_large_id('f'), unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     friend_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.Text, nullable=True)
     is_accepted = db.Column(db.Boolean, nullable=False, default=False)
+    def __str__(self):
+        return f"-UserID: {self.user_id}, FriendID: {self.friend_id}, Accepted: {self.is_accepted}-"
 
 class Trip(db.Model):
     id = db.Column(db.BigInteger, primary_key=True, default=lambda: generate_large_id('t'), unique=True)

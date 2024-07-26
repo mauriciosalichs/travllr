@@ -80,7 +80,9 @@
 				
 	document.addEventListener('DOMContentLoaded', function() {
 		if (countryInput.value === '') {
-			loadCities();
+			loadCities(true);
+		} else {
+			loadCities(false);
 		}
 		fetch('/countries')
 			.then(response => response.json())
@@ -96,20 +98,19 @@
 	
 	function checkCityAvailability() {
 		cityInput.value = 'Loading cities...';
-		loadCities();
+		loadCities(true);
 	}
 		
-	async function loadCities() {
+	async function loadCities(clearCity) {
 		const countryValue = countryInput.value;
 		cityList.innerHTML = "";
 		cityInput.disabled = true;
 		cityInput.classList.add('disabled');
 		if (countryValue !== '') {
-			cityInput.value = '';
+			if (clearCity) {cityInput.value = ''}
 			fetch(`/cities?country=${countryValue}`)
 				.then(response => response.json())
 				.then(data => {
-					cityInput.value = ''
 					cityInput.disabled = false;
 					cityInput.classList.remove('disabled');
 					data.forEach(city => {

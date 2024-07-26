@@ -68,6 +68,11 @@
 .friend-button.green {
     background-color: green;
 }
+.toggle-arrow {
+    cursor: pointer;
+    font-size: 0.7em; /* Ajusta el tamaño de la flecha */
+    margin-left: 10px; /* Espaciado entre el texto y la flecha */
+}
 </style>
 
 <div class="card">
@@ -146,15 +151,20 @@
 		{% endif %}
 		<br>
 		{% if past_trips %}
-		<h5 class="card-title">TRIPS HISTORY</h5>
-		<ul>
-		{% for trip in past_trips %}
-			<li>
-			<span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
-			<p>{{ trip.start_date }} - {{ trip.end_date }}</p>
-			</li>
-		{% endfor %}
-		</ul>
+		<div class="trip-history">
+			<h5 class="card-title">
+				TRIPS HISTORY 
+				<span class="toggle-arrow" onclick="toggleTrips()">&#9660;</span>
+			</h5>
+			<ul id="trip-list" style="display: none;">
+				{% for trip in past_trips %}
+					<li>
+						<span class="tag-label">{{ trip.city }}, {{ trip.country }}</span>
+						<p>{{ trip.start_date }} - {{ trip.end_date }}</p>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
 		{% endif %}
 		<br>
 		<h5 class="card-title">UPCOMING TRIPS</h5>
@@ -306,6 +316,19 @@
 		var userId = {{ user.id }};
 		updateFriendButtonStatus(userId);
 	});
+
+	function toggleTrips() {
+		var tripList = document.getElementById("trip-list");
+		var arrow = document.querySelector(".toggle-arrow");
+
+		if (tripList.style.display === "none") {
+			tripList.style.display = "block";
+			arrow.innerHTML = "&#9650;"; // Flecha hacia arriba
+		} else {
+			tripList.style.display = "none";
+			arrow.innerHTML = "&#9660;"; // Flecha hacia abajo
+		}
+	}
 </script>
 
 {% endblock %}

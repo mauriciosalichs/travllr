@@ -112,7 +112,6 @@ def profile(user_id):
             current_trip = trip
         else:
             future_trips.append(trip)
-    print(current_trip)
     tags = user.tags.split(';')[:-1] if user.tags else []  
     return render_template('profile.html', user=user, tags=tags, past_trips=past_trips, current_trip=current_trip, future_trips=future_trips)
     
@@ -121,7 +120,6 @@ def profile(user_id):
 def edit_profile():
     form = UpdateProfileForm()
     if request.method == 'GET' or not form.validate_on_submit():
-        print("F",form)
         form.username.data = current_user.username
         form.gender.data = current_user.gender
         form.description.data = current_user.description
@@ -130,7 +128,6 @@ def edit_profile():
         form.birthdate.data = current_user.birthdate
         form.tags = current_user.tags.split(';')[:-1] if current_user.tags else []
     if form.validate_on_submit():
-        print('G',form)
         if form.delete_account.data:
             db.session.delete(current_user)
             db.session.commit()
@@ -207,7 +204,6 @@ def create_trip():
 @app.route('/delete_trip/<int:trip_id>', methods=['GET','POST'])
 def delete_trip(trip_id):
     trip = Trip.query.get_or_404(trip_id)
-    print(trip.id, current_user.id)
     if trip.user_id != current_user.id:
         return redirect(url_for('profile', user_id=trip.user_id))
     db.session.delete(trip)
@@ -277,6 +273,7 @@ def notifications():
 # -------- Messages --------
 
 @app.route('/message/<int:user_id>', methods=['GET', 'POST'])
+@login_required
 def message(user_id):
     other = User.query.get(user_id) 
     conversation_messages = Message.query.filter(
@@ -364,7 +361,7 @@ def send_friend_request(user_id):
 @app.route('/accept_friend_request/<int:user_id>', methods=['GET','POST'])
 @login_required
 def accept_friend_request(user_id):
-    friend_request = Friend.query.filter(Friend.user_id == user_id).first()
+    friend_request = Friend.query.filter_by(user_id=user_id, friend_id=current_user.id).first()
     if not friend_request:
         return jsonify({"error": "Friendship not existing"}), 403
     friend_request.is_accepted = True
