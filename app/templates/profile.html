@@ -270,6 +270,10 @@
 				alert(error.responseJSON.error);
 			});
 	});
+	document.getElementById("reject").addEventListener("click", handleReject);
+	function handleReject() {
+        $('#friend-cancel-form').submit()
+    }
 	$('#friend-cancel-form').on('submit', function(e) {
 		e.preventDefault();
 		var userId = {{ user.id }};

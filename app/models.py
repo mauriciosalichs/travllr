@@ -3,6 +3,7 @@ from app import db, login
 from random import randint
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import Table, Column, Integer, ForeignKey
 
 def generate_large_id(code):
     while True:
@@ -15,6 +16,11 @@ def generate_large_id(code):
             return new_id
         elif code == 'm' and not Message.query.get(new_id):
             return new_id
+
+friends_association_table = Table('friends', db.Model.metadata,
+    Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
+    Column('friend_id', Integer, ForeignKey('user.id'), primary_key=True)
+)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.BigInteger, primary_key=True, default=lambda: generate_large_id('u'), unique=True)
@@ -29,9 +35,12 @@ class User(UserMixin, db.Model):
     tags = db.Column(db.String(500), nullable=True)
     birthdate = db.Column(db.Date)
     last_login = db.Column(db.DateTime)
-    friends = db.relationship('Friend', backref='user', lazy=True) # Useless?
     trips = db.relationship('Trip', backref='traveler', lazy=True)
-    
+    friends = db.relationship('User', secondary=friends_association_table,
+                              primaryjoin=id==friends_association_table.c.user_id,
+                              secondaryjoin=id==friends_association_table.c.friend_id,
+                              backref='friends_of', lazy='dynamic')
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -49,9 +58,8 @@ class Friend(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     friend_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.Text, nullable=True)
-    is_accepted = db.Column(db.Boolean, nullable=False, default=False)
     def __str__(self):
-        return f"-UserID: {self.user_id}, FriendID: {self.friend_id}, Accepted: {self.is_accepted}-"
+        return f"-UserID: {self.user_id}, FriendID: {self.friend_id}-"
 
 class Trip(db.Model):
     id = db.Column(db.BigInteger, primary_key=True, default=lambda: generate_large_id('t'), unique=True)

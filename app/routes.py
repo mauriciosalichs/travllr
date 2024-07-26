@@ -37,9 +37,7 @@ def home():
         unread_messages = len(Message.query.filter(
                                       Message.receiver_id == current_user.id,
                                       Message.read == False).all())
-        pending_requests = len(Friend.query.filter(
-                                      Friend.friend_id == current_user.id,
-                                      Friend.is_accepted == False).all())
+        pending_requests = len(Friend.query.filter(Friend.friend_id == current_user.id).all())
         return render_template('base.html')
     else:
         return login()
@@ -364,7 +362,14 @@ def accept_friend_request(user_id):
     friend_request = Friend.query.filter_by(user_id=user_id, friend_id=current_user.id).first()
     if not friend_request:
         return jsonify({"error": "Friendship not existing"}), 403
-    friend_request.is_accepted = True
+    friend_user = User.query.get(user_id)
+    if not friend_user:
+        raise ValueError("Friend user not found")
+    if friend_user not in current_user.friends:
+        current_user.friends.append(friend_user)
+    if current_user not in friend_user.friends:
+        friend_user.friends.append(current_user)
+    db.session.delete(friend_request)
     db.session.commit()
     return jsonify({"status": "Friendship accepted"}), 200
 
@@ -385,40 +390,29 @@ def cancel_friend_request(user_id):
 @login_required
 def get_friend_status(user_id):
     global pending_requests
-    pending_requests = len(Friend.query.filter(
-                           Friend.friend_id == current_user.id,
-                           Friend.is_accepted == False).all())
-    friend_request = Friend.query.filter(
-        ((Friend.user_id == current_user.id) & (Friend.friend_id == user_id)) |
-        ((Friend.user_id == user_id) & (Friend.friend_id == current_user.id))
-    ).first()
-    if not friend_request:
-        status = "none"
-    elif friend_request.is_accepted:
+    pending_requests = len(Friend.query.filter(Friend.friend_id == current_user.id).all())
+
+    if current_user.friends.filter_by(id=user_id).first():
         status = "accepted"
-    elif friend_request.user_id == current_user.id:
-        status = "pending_sent"
+        friend_request = None
     else:
-        status = "pending_received"
+        friend_request = Friend.query.filter(
+        ((Friend.user_id == current_user.id) & (Friend.friend_id == user_id)) |
+        ((Friend.user_id == user_id) & (Friend.friend_id == current_user.id))).first()
+        if not friend_request:
+            status = "none"
+        elif friend_request.user_id == current_user.id:
+            status = "pending_sent"
+        else:
+            status = "pending_received"
     return jsonify({"status": status,"message": friend_request.message if friend_request else None}), 200
     
 @app.route('/friends', methods=['GET', 'POST'])
 @login_required
 def friends():
-    accepted=[]
+    accepted = list(current_user.friends)
     pending=[]
-    accepted_requests = Friend.query.filter(
-        (Friend.user_id == current_user.id) | (Friend.friend_id == current_user.id),
-         Friend.is_accepted==True).all()
-    pending_requests = Friend.query.filter(
-        (Friend.user_id == current_user.id) | (Friend.friend_id == current_user.id),
-         Friend.is_accepted==False).all()
-    for req in accepted_requests:
-        if req.user_id == current_user.id:
-            accepted.append(User.query.get_or_404(req.friend_id))
-        else:
-            accepted.append(User.query.get_or_404(req.user_id))
-    for req in pending_requests:
+    for req in Friend.query.filter((Friend.user_id == current_user.id) | (Friend.friend_id == current_user.id)).all():
         if req.user_id == current_user.id:
             pending.append(User.query.get_or_404(req.friend_id))
         else:
