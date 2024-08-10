@@ -1,11 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Notifications{% endblock %}
 {% block content %}
-<br><h1>Notifications</h1>
-<ul>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="container">
+    <h1>Notifications</h1>
     {% for notification in notifications %}
-        <li>{{ notification.content }} - {{ notification.timestamp }}</li>
+    <a href="{{ url_for('profile', user_id=notification.protagonist_id) }}" class="nav-link">
+        <div class="notification {% if not notification.is_read %}unread{% else %}read{% endif %}">
+            <p class="message">{{ notification.message }}</p>
+            <p class="timestamp">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
+    </a>
     {% endfor %}
-	<br><br><br>TBD
-</ul>
+</div>
+
+<script>
+    window.onload = function(e) {
+        fetch('/mark_notifications', {method: 'POST'});
+    }
+</script>
+
 {% endblock %}

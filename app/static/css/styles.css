@@ -166,31 +166,12 @@ html, body {
 
 % Messages
 
-.conversation.unread {
-	margin-bottom: 20px;
-	background-color: #FF6961;
-	padding: 10px;
-	border: 1px solid #ccc;
-	border-radius: 15px;
-	cursor: pointer;
-}
-.conversation.read {
-	margin-bottom: 20px;
-	background-color: #6FC276;
-	padding: 10px;
-	border: 1px solid #ccc;
-	border-radius: 15px;
-	cursor: pointer;
-}
 .conversation h3 {
 	margin-top: 0;
 }
 .conversation you {
 	background-color: #6FC2C6;
 	margin-top: 0;
-}
-.conversation .last-message {
-	margin-top: 5px;
 }
 .link {
 	display: block;
@@ -235,4 +216,38 @@ html, body {
 .user-details a {
     font-weight: bold; /* Adjust as needed */
 	margin-left: 0px;
+}
+
+% Notifications
+
+.notification {
+	border-bottom: 1px solid #ddd;
+}
+.notification:last-child {
+	border-bottom: none;
+}
+.notification.read {
+	background-color: #e0e0e0;
+}
+.notification.unread {
+	background-color: #f9f9f9;
+	border-left: 4px solid #007bff; /* Blue color for unread notifications */
+}
+.notification .message {
+	font-size: 16px;
+	margin: 10px;
+}
+.notification .timestamp {
+	font-size: 12px;
+	color: #888;
+	margin-top: 5px;
+	margin: 10px;
+}
+.notification .last-message {
+	font-size: 16px;
+	margin: 10px;
+}
+.notification .time-message {
+	font-size: 12px;
+	margin: 10px;
 }

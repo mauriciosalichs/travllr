@@ -19,10 +19,6 @@
         {% endfor %}
 	</div>
 	<div class="form-group">
-		{{ form.file.label }}
-		{{ form.file(size=32, class_="form-control-file", id="imageInput") }}
-	</div>
-	<div class="form-group">
 		{{ form.country.label }}
 		{{ form.country(size=32, class_="form-control", list="countryList", id="countryInput") }}
 		{% for error in form.country.errors %}

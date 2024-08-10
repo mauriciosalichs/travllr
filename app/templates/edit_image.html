@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile Picture</title>
+    <style>
+        #container {
+            position: relative;
+            display: inline-block;
+            border: 1px solid #ccc;
+            overflow: hidden;
+        }
+        #image {
+            display:none;
+            width: auto;
+            height: auto;
+            -webkit-user-drag: none;
+            pointer-events: auto;
+        }
+        #crop-box {
+            position: absolute;
+            border: 2px solid red;
+            box-sizing: border-box;
+            aspect-ratio: 1 / 1;
+            display: none; /* Hidden initially */
+        }
+        #crop-info {
+            display: none; /* Hidden initially */
+            margin-top: 10px;
+        }
+        #crop-button {
+            display: none; /* Hidden initially */
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="file-input" accept="image/*">
+    <br>
+    <div id="container">
+        <img id="image" src="" alt="Selected Image">
+        <div id="crop-box"></div>
+    </div>
+    <div id="crop-info">Select a Portion of the Image to Upload</div>
+    <button id="crop-button">Upload Photo</button>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const image = document.getElementById('image');
+        const container = document.getElementById('container');
+        const cropBox = document.getElementById('crop-box');
+        const cropInfo = document.getElementById('crop-info');
+        const cropButton = document.getElementById('crop-button');
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const image_ = new Image();
+                    image_.src = e.target.result;
+                    image_.onload = function() {
+                        if (image_.width < 200 || image_.height < 200) {
+                            alert('Image must be at least 200x200 pixels.');
+                        } else {
+                            image.src = image_.src;
+                            fileInput.style.display = "none";
+                            image.style.display = "block";
+                            image.style.width = "320px"; // Arreglar
+                            cropInfo.style.display = "block";
+                        }
+                    }
+                    
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        let startX, startY, dx, dy, startWidth, startHeight, startLeft, startTop;
+        let selectionStarted = false;
+
+        image.addEventListener('mousedown', (event) => {
+            const rect = image.getBoundingClientRect();
+            if (isMobile) {
+                if (event.clientX < rect.left + 100) {
+                    startX = 0;
+                } else if (event.clientX - rect.left > rect.width - 100) {
+                    startX = rect.width - 100;
+                } else {
+                    startX = event.clientX - (rect.left + 100);
+                }
+
+                if (event.clientY < rect.top + 100) {
+                    startY = 0;
+                } else if (event.clientY - rect.top > rect.height - 100) {
+                    startY = rect.height - 100;
+                } else {
+                    startY = event.clientY - (rect.top + 100);
+                }
+                cropBox.style.left = startX+'px';
+                cropBox.style.top = startY+'px';
+                cropBox.style.width = '200px';
+                cropBox.style.height = '200px';
+                cropBox.style.display = "block";
+                cropButton.style.display = 'block';
+            } else {
+                startX = event.clientX - rect.left;
+                startY = event.clientY - rect.top;
+                cropBox.style.display = "block";
+                cropBox.style.left = startX+'px';
+                cropBox.style.top = startY+'px';
+                cropBox.style.width = '0px';
+                cropBox.style.height = '0px';
+                selectionStarted = true;
+            }
+        });
+
+        image.addEventListener('mousemove', (event) => {
+            if (selectionStarted) {
+                dx = event.clientX - startX;
+                dy = event.clientY - startY;
+                var d = Math.max(dx,dy);
+                cropBox.style.width = d + 'px';
+                cropBox.style.height = d + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (event) => {
+            if (selectionStarted) {
+                selectionStarted = false;
+
+                const size =  parseInt(cropBox.style.width, 10);
+                if (size < 200) {
+                    alert('Image must be at least 200x200 pixels.');
+                    cropButton.style.display = "none";
+                    cropInfo.style.display = 'block';
+                    cropBox.style.display = 'none';
+                } else {
+                    cropButton.style.display = "block";
+                    cropInfo.style.display = 'none';
+                }
+            }
+        });
+
+        cropButton.addEventListener('click', () => {
+            const originalCanvas = document.createElement('canvas');
+            const octx = originalCanvas.getContext('2d');
+            const croppedCanvas = document.createElement('canvas');
+            const cctx = croppedCanvas.getContext('2d');
+
+            const cropBoxRect = cropBox.getBoundingClientRect();
+            const imageRect = image.getBoundingClientRect();
+
+            originalCanvas.width = imageRect.width;
+            originalCanvas.height = imageRect.height;
+            croppedCanvas.width = cropBoxRect.width;
+            croppedCanvas.height = cropBoxRect.height;
+
+            octx.drawImage(
+                image,
+                0,
+                0,
+                imageRect.width,
+                imageRect.height
+            );
+            cctx.drawImage(
+                originalCanvas,
+                cropBoxRect.left - imageRect.left,
+                cropBoxRect.top - imageRect.top,
+                cropBoxRect.width,
+                cropBoxRect.height,
+                0,
+                0,
+                croppedCanvas.width,
+                croppedCanvas.height
+            );
+
+            croppedCanvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('croppedImage', blob);
+
+                fetch('/crop', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        // Handle non-redirect responses if needed
+                        console.log('Response:', response);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

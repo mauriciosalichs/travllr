@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, jsonify
 from app import app, db
 from app.forms import RegistrationForm, LoginForm, UpdateProfileForm, CreateTripForm, SearchForm, fetch_cities_from, countries_list
-from app.models import User, Trip, Message, Friend, Location
+from app.models import User, Trip, Message, Friend, Notification, Location
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_
@@ -97,7 +97,7 @@ def logout():
 def profile(user_id):
     user = User.query.get_or_404(user_id)
     trips = Trip.query.filter_by(user_id=user_id).order_by(Trip.start_date.asc()).all()
-    
+
     past_trips = []
     current_trip = None
     future_trips = []
@@ -111,7 +111,7 @@ def profile(user_id):
         else:
             future_trips.append(trip)
     tags = user.tags.split(';')[:-1] if user.tags else []  
-    return render_template('profile.html', user=user, tags=tags, past_trips=past_trips, current_trip=current_trip, future_trips=future_trips)
+    return render_template('profile.html', user=user, tags=tags, past_trips=past_trips, current_trip=current_trip, future_trips=future_trips, friends_qty=user.friends.count())
     
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -139,10 +139,12 @@ def edit_profile():
         current_user.city = form.city.data
         current_user.birthdate = form.birthdate.data
         current_user.tags = form.tag.data
-        if form.file.data:
-            image_data = form.file.data.read()
-            image_base64 = base64.b64encode(image_data).decode('utf-8')
-            current_user.image_file = image_base64
+
+        for friend in current_user.friends:
+            notification = Notification(user_id=friend.id, protagonist_id=current_user.id,
+                                        message=f"{current_user.username} updated the profile info.")
+            db.session.add(notification)
+
         db.session.commit()
         return redirect(url_for('profile', user_id=current_user.id))
     return render_template('edit_profile.html', form=form)
@@ -194,6 +196,12 @@ def create_trip():
                     comments=form.comments.data,
                     user_id=current_user.id)
         db.session.add(trip)
+
+        for friend in current_user.friends:
+            notification = Notification(user_id=friend.id, protagonist_id=current_user.id,
+                                        message=f"{current_user.username} created a new trip.")
+            db.session.add(notification)
+
         db.session.commit()
         flash('Your trip has been created!', 'success')
         return redirect(url_for('profile', user_id=current_user.id))
@@ -262,11 +270,44 @@ def city(city, country):
     travllrs = User.query.filter(User.city==city,User.country==country).order_by(User.last_login.asc()).all()
     return render_template('city.html', location=location, travllrs=travllrs)
 
+@app.route('/edit_image', methods=['GET', 'POST'])
+@login_required
+def edit_image():
+    return render_template('edit_image.html')
+
+@app.route('/crop', methods=['GET', 'POST'])
+@login_required
+def crop():
+    if 'croppedImage' not in request.files:
+        return 'No file part', 400
+    file = request.files['croppedImage']
+    if file:
+        image_data = file.read()
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        current_user.image_file = image_base64
+
+        for friend in current_user.friends:
+            notification = Notification(user_id=friend.id, protagonist_id=current_user.id,
+                                        message=f"{current_user.username} uploaded a new picture.")
+            db.session.add(notification)
+
+        db.session.commit()
+    return redirect(url_for('profile', user_id=current_user.id))
+
 @app.route('/notifications', methods=['GET', 'POST'])
 @login_required
 def notifications():
-    # Lógica para manejar las notificaciones
-    return render_template('notifications.html', title='Notifications')
+    notifications = Notification.query.filter_by(user_id=current_user.id).all()
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/mark_notifications', methods=['POST'])
+@login_required
+def mark_notifications():
+    notifications = Notification.query.filter_by(user_id=current_user.id, is_read=False).all()
+    for notif in notifications:
+        notif.is_read = True
+    db.session.commit()
+    return "200"
 
 # -------- Messages --------
 
@@ -289,21 +330,49 @@ def message(user_id):
 def messages():
     global unread_messages
     unread_messages = 0
-    users = User.query.all()
+    if 'searchName' in request.form and request.form['searchName'] != '':
+        keyword = request.form['searchName']
+        users = User.query.filter(User.username.ilike(f'%{keyword}%')).all()
+    else:
+        users = User.query.all()
     conversations = []
-    for user in users:
-        last_message = Message.query.filter(
-            ((Message.sender_id == current_user.id) & (Message.receiver_id == user.id)) |
-            ((Message.sender_id == user.id) & (Message.receiver_id == current_user.id))
-        ).order_by(Message.timestamp.desc()).first()       
-        if last_message:
-            conversations.append({
-                'user': user,
-                'last_message': last_message,
-                'mysent': last_message.sender_id == current_user.id
-            })
-    conversations.sort(key=lambda c: c['last_message'].timestamp, reverse=True)
-    return render_template('messages.html', conversations=conversations)
+    if 'searchWord' in request.form and request.form['searchWord'] != '':
+        keyword = request.form['searchWord']
+        for user in users:
+            match_messages = Message.query.filter(
+                (((Message.sender_id == current_user.id) & (Message.receiver_id == user.id)) |
+                ((Message.sender_id == user.id) & (Message.receiver_id == current_user.id))) &
+                (Message.content.ilike(f'%{keyword}%'))).all()
+            for message in match_messages:
+                conversations.append({
+                    'user_id': user.id,
+                    'username': user.username,
+                    'message_content': message.content,
+                    'message_timestamp': message.timestamp,
+                    'message_read': message.read,
+                    'mysent': message.sender_id == current_user.id
+                })
+    else:
+        for user in users:
+            last_message = Message.query.filter(
+                ((Message.sender_id == current_user.id) & (Message.receiver_id == user.id)) |
+                ((Message.sender_id == user.id) & (Message.receiver_id == current_user.id))
+            ).order_by(Message.timestamp.desc()).first()       
+            if last_message:
+                conversations.append({
+                    'user_id': user.id,
+                    'username': user.username,
+                    'message_content': last_message.content,
+                    'message_timestamp': last_message.timestamp,
+                    'message_read': last_message.read,
+                    'mysent': last_message.sender_id == current_user.id
+                })
+    conversations.sort(key=lambda c: c['message_timestamp'], reverse=True)
+    
+    if request.form:
+        return jsonify(conversations)
+    else:
+        return render_template('messages.html', conversations=conversations)
 
 @app.route('/send_message/<int:user_id>', methods=['GET','POST'])
 @login_required
@@ -384,7 +453,7 @@ def cancel_friend_request(user_id):
         return jsonify({"error": "Request not existing"}), 403
     db.session.delete(friend_request)
     db.session.commit()
-    return jsonify({"status": "Friendship canceled"}), 200
+    return jsonify({"status": "Friendship cancelled"}), 200
     
 @app.route('/get_friend_status/<int:user_id>', methods=['GET'])
 @login_required

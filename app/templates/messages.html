@@ -5,32 +5,35 @@
 <br><h1>Messages</h1><br>
 
 {% if conversations %}
-<label>
-  <input type="checkbox" id="mark-all">
-  Mark all
-</label>
+<input type="text" placeholder="Search by name" id="search-name" size="30px">
+<br>
+<input type="text" placeholder="Search by word" id="search-word" size="30px">
+<br>
+<button type="button" onclick="searchConversations()">Search</button>
+<br><br>
+<label><input type="checkbox" id="mark-all">Mark all</label>
 {% else %}
 No messages yet :(
 {% endif %}
 
 <button id="delete-selected" style="display: none; margin-left: 20px;">🗑</button>
-
+<br><br>
+<div id="conversations-container">
 {% for conv in conversations %}
 <div class="conversation-container">
   <!-- Checkbox for each conversation -->
-  <input type="checkbox" class="conversation-checkbox" data-conversation-id="{{ conv.user.id }}">
-
-  <a href="{{ url_for('message', user_id=conv.user.id) }}" class="link">
-    <div class="conversation {% if conv.last_message.read or conv.mysent %}read{% else %}unread{% endif %}">
-      <h5>{{ conv.user.username }}</h5>
-      {% if conv.last_message %}
+  <input type="checkbox" class="conversation-checkbox" data-conversation-id="{{ conv.user_id }}">
+  <a href="{{ url_for('message', user_id=conv.user_id) }}" class="link">
+    <div class="notification {% if conv.message_read or conv.mysent %}read{% else %}unread{% endif %}">
+      <p class="last-message"><strong>{{ conv.username }}</strong></p>
+      {% if conv.message_content %}
         <p class="last-message">
           {% if conv.mysent %}
             <strong>You sent</strong>
           {% endif %}
-          {{ conv.last_message.content }}
+          {{ conv.message_content }}
         </p>
-        <p class="last-message"><strong>on </strong>{{conv.last_message.timestamp.strftime('%d/%m/%Y %H:%M')}} (UTC)</p>
+        <p class="time-message"><strong>on </strong>{{conv.message_timestamp.strftime('%d/%m/%Y %H:%M')}} (UTC)</p>
       {% else %}
         <p>No messages yet.</p>
       {% endif %}
@@ -38,6 +41,7 @@ No messages yet :(
   </a>
 </div>
 {% endfor %}
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -81,6 +85,78 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+function searchConversations() {
+  const searchName = document.getElementById('search-name');
+  const searchWord = document.getElementById('search-word');
+  if (searchName.value == "" && searchWord.value == "") {
+    alert('You need to input at least one search criteria.');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('searchName', searchName.value);
+  formData.append('searchWord', searchWord.value);
+  fetch('/messages', {
+      method: 'POST',
+      body: formData
+  })
+  .then(response => response.json())
+  .then(conversations => {
+      const conversationsContainer = document.getElementById('conversations-container');
+      conversationsContainer.innerHTML = ''; // Clear existing content
+
+      conversations.forEach(conv => {
+          const conversationDiv = document.createElement('div');
+          conversationDiv.classList.add('conversation-container');
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.classList.add('conversation-checkbox');
+          checkbox.dataset.conversationId = conv.user_id;
+
+          const link = document.createElement('a');
+          link.href = `/message/${conv.user_id}`;
+          link.classList.add('link');
+
+          const notificationDiv = document.createElement('div');
+          notificationDiv.classList.add('notification');
+          if (conv.message_read || conv.mysent) {
+              notificationDiv.classList.add('read');
+          } else {
+              notificationDiv.classList.add('unread');
+          }
+
+          const usernameP = document.createElement('p');
+          usernameP.classList.add('last-message');
+          usernameP.innerHTML = `<strong>${conv.username}</strong>`;
+
+          const lastMessageP = document.createElement('p');
+          lastMessageP.classList.add('last-message');
+          if (conv.mysent) {
+              lastMessageP.innerHTML = `<strong>You sent</strong> ${conv.message_content}`;
+          } else {
+              lastMessageP.textContent = conv.message_content;
+          }
+
+          const timeMessageP = document.createElement('p');
+          timeMessageP.classList.add('time-message');
+          timeMessageP.innerHTML = `<strong>on </strong>${new Date(conv.message_timestamp).toLocaleString()} (UTC)`;
+
+          notificationDiv.appendChild(usernameP);
+          notificationDiv.appendChild(lastMessageP);
+          notificationDiv.appendChild(timeMessageP);
+
+          link.appendChild(notificationDiv);
+          conversationDiv.appendChild(checkbox);
+          conversationDiv.appendChild(link);
+
+          conversationsContainer.appendChild(conversationDiv);
+      });
+  })
+  .catch(error => {
+      console.error('Error fetching messages:', error);
+  });
+}
 </script>
     
 {% endblock %}

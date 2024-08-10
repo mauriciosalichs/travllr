@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, DateField, BooleanField, FormField, DateField, SelectField
-from flask_wtf.file import FileField, FileAllowed
+#from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Optional, ValidationError, Length, Email, EqualTo
 from datetime import date
 import requests
@@ -8,19 +8,18 @@ import requests
 # Fetch countries and cities from the web
 countries_list = []
 cities_list = []
-
 countries_code = {}
-url = f'http://api.geonames.org/countryInfoJSON?username=msalichs'
-response = requests.get(url)
-if response.status_code == 200:
+
+try:
+    url = f'http://api.geonames.org/countryInfoJSON?username=msalichs'
+    response = requests.get(url)
     countries_data = response.json()
     for country in countries_data['geonames']:
         countries_code[country['countryName']] = country['countryCode']
         countries_list.append(country['countryName'])
     countries_list.sort()
-else:
+except:
     print("Unable to fetch countries data")
-    exit()
     
 def fetch_cities_from(country_name):
     global cities_list
@@ -80,7 +79,6 @@ class UpdateProfileForm(FlaskForm):
     description = TextAreaField('Description:', validators=[Length(max=5000)])
     tag = StringField('Add Tag:', validators=[Length(max=300)])
     birthdate = DateField('Birthdate:', format='%Y-%m-%d', validators=[DataRequired()])
-    file = FileField('Update Profile Picture:', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     addtag = SubmitField('Add Tag')
     tags = []
     gender = SelectField('Gender',choices=['Male ♂','Female ♀','Muxe ⚧','Other 🌈'],
